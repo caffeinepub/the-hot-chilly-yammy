@@ -36,17 +36,29 @@ const CATEGORY_ICONS: Record<string, string> = {
   Soup: "🍲",
 };
 
-const CATEGORY_IMAGES: Record<string, string> = {
-  "Spring Roll": "/assets/generated/food-spring-roll.dim_400x300.jpg",
-  Momos: "/assets/generated/food-momos.dim_400x300.jpg",
-  Noodles: "/assets/generated/food-noodles.dim_400x300.jpg",
-  Manchurian: "/assets/generated/food-manchurian.dim_400x300.jpg",
-  Soup: "/assets/generated/food-soup.dim_400x300.jpg",
+const DISH_IMAGES: Record<string, string> = {
+  "Spring Roll": "/assets/generated/spring-roll.dim_400x400.jpg",
+  "Steamed Momos": "/assets/generated/steamed-momos.dim_400x400.jpg",
+  "Fried Momos": "/assets/generated/fried-momos.dim_400x400.jpg",
+  "Chilli Momos": "/assets/generated/chilli-momos.dim_400x400.jpg",
+  "Tandoori Momos": "/assets/generated/tandoori-momos.dim_400x400.jpg",
+  "Paneer Momos": "/assets/generated/paneer-momos.dim_400x400.jpg",
+  "Veg Noodles": "/assets/generated/veg-noodles.dim_400x400.jpg",
+  "Schezwan Noodles": "/assets/generated/schezwan-noodles.dim_400x400.jpg",
+  "Hakka Noodles": "/assets/generated/hakka-noodles.dim_400x400.jpg",
+  "Veg Manchurian": "/assets/generated/veg-manchurian.dim_400x400.jpg",
+  "Gobi Manchurian": "/assets/generated/gobi-manchurian.dim_400x400.jpg",
+  "Paneer Manchurian": "/assets/generated/paneer-manchurian.dim_400x400.jpg",
+  "Hot & Sour Soup": "/assets/generated/hot-sour-soup.dim_400x400.jpg",
 };
+
+// Gradient fallback if image not available
+const FALLBACK_GRADIENT =
+  "linear-gradient(135deg, oklch(0.20 0.10 150) 0%, oklch(0.30 0.16 145) 100%)";
 
 type CartItem = { name: string; price: number; quantity: number };
 
-function MenuItemRow({
+function MenuItemCard({
   item,
   index,
   onAdd,
@@ -56,48 +68,124 @@ function MenuItemRow({
   onAdd: (item: MenuItem) => void;
 }) {
   const markerIndex = index + 1;
+  const dishImage = DISH_IMAGES[item.name];
+
   return (
     <motion.div
-      data-ocid={`menu.item.row.${markerIndex}`}
-      initial={{ opacity: 0, x: -10 }}
-      whileInView={{ opacity: 1, x: 0 }}
+      data-ocid={`menu.item.${markerIndex}`}
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
-      transition={{ duration: 0.3, delay: index * 0.05 }}
-      className="flex items-center justify-between py-3 px-1 border-b border-primary/10 last:border-0 group"
+      transition={{
+        duration: 0.45,
+        delay: index * 0.08,
+        ease: [0.25, 0.46, 0.45, 0.94],
+      }}
+      className="dish-card rounded-xl overflow-hidden flex flex-col"
     >
-      <div className="flex-1 min-w-0 pr-3">
-        <span className="text-foreground font-body font-semibold text-base sm:text-lg leading-snug">
-          {item.name}
-        </span>
-        {item.note && (
-          <span className="ml-2 text-sm text-accent/80 font-body italic">
-            ({item.note})
-          </span>
+      {/* Square photo area */}
+      <div
+        className="relative w-full overflow-hidden"
+        style={{ aspectRatio: "1 / 1" }}
+      >
+        {dishImage ? (
+          <img
+            src={dishImage}
+            alt={item.name}
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <div
+            className="w-full h-full"
+            style={{ background: FALLBACK_GRADIENT }}
+          />
         )}
-      </div>
-      <div className="flex items-center gap-3 flex-shrink-0">
-        <span className="font-display font-bold text-primary text-base sm:text-lg tracking-wide">
-          ₹{Number(item.price)}/-
-        </span>
-        <button
-          type="button"
-          data-ocid={`menu.item.button.${markerIndex}`}
-          onClick={() => onAdd(item)}
-          className="w-8 h-8 rounded-full flex items-center justify-center transition-all shadow-sm active:scale-95"
+        {/* Dark overlay for text legibility */}
+        <div
+          className="absolute inset-0"
           style={{
             background:
-              "linear-gradient(135deg, oklch(0.35 0.16 22), oklch(0.28 0.13 18))",
-            border: "1px solid oklch(0.78 0.14 72 / 0.25)",
-            boxShadow: "0 2px 8px oklch(0.05 0.02 18 / 0.5)",
+              "linear-gradient(180deg, oklch(0.07 0.04 150 / 0.10) 0%, oklch(0.07 0.04 150 / 0.55) 100%)",
           }}
-          aria-label={`Add ${item.name} to cart`}
+        />
+        {/* Veg dot indicator */}
+        <div
+          className="absolute top-2 left-2 w-5 h-5 rounded-sm border-2 flex items-center justify-center"
+          style={{
+            borderColor: "oklch(0.60 0.22 145)",
+            background: "oklch(0.07 0.04 150 / 0.7)",
+          }}
         >
-          <Plus
-            className="w-4 h-4"
-            style={{ color: "oklch(0.86 0.17 68)" }}
-            strokeWidth={2.5}
+          <div
+            className="w-2.5 h-2.5 rounded-full"
+            style={{ background: "oklch(0.60 0.22 145)" }}
           />
-        </button>
+        </div>
+      </div>
+
+      {/* Card bottom info */}
+      <div
+        className="px-2.5 pt-2.5 pb-2 flex flex-col gap-1.5 flex-1 relative"
+        style={{
+          background:
+            "linear-gradient(180deg, oklch(0.13 0.05 150) 0%, oklch(0.10 0.04 150) 100%)",
+        }}
+      >
+        {/* Top gold accent line */}
+        <div
+          className="absolute top-0 left-0 right-0 h-px"
+          style={{
+            background:
+              "linear-gradient(90deg, transparent, oklch(0.75 0.15 80 / 0.5), transparent)",
+          }}
+        />
+
+        <p
+          className="font-display font-bold text-sm leading-tight"
+          style={{ color: "oklch(0.96 0.015 70)" }}
+        >
+          {item.name}
+          {item.note && (
+            <span
+              className="block font-body font-normal text-xs italic mt-0.5"
+              style={{ color: "oklch(0.60 0.08 150)" }}
+            >
+              {item.note}
+            </span>
+          )}
+        </p>
+
+        <div className="flex items-center justify-between mt-auto">
+          <span
+            className="font-display font-bold text-sm tracking-wide"
+            style={{
+              color: "oklch(0.75 0.15 80)",
+              textShadow: "0 0 12px oklch(0.75 0.15 80 / 0.4)",
+            }}
+          >
+            ₹{Number(item.price)}/-
+          </span>
+
+          <button
+            type="button"
+            data-ocid={`menu.item.button.${markerIndex}`}
+            onClick={() => onAdd(item)}
+            className="w-7 h-7 rounded-full flex items-center justify-center transition-all shadow-sm active:scale-90"
+            style={{
+              background:
+                "linear-gradient(135deg, oklch(0.48 0.20 150), oklch(0.35 0.14 150))",
+              border: "1px solid oklch(0.60 0.20 150 / 0.5)",
+              boxShadow: "0 2px 8px oklch(0.04 0.02 150 / 0.6)",
+            }}
+            aria-label={`Add ${item.name} to cart`}
+          >
+            <Plus
+              className="w-3.5 h-3.5"
+              style={{ color: "oklch(0.97 0.01 70)" }}
+              strokeWidth={2.5}
+            />
+          </button>
+        </div>
       </div>
     </motion.div>
   );
@@ -113,14 +201,17 @@ function CategorySection({
   onAdd: (item: MenuItem) => void;
 }) {
   const icon = CATEGORY_ICONS[category.name] || "🍽️";
-  const categoryImage = CATEGORY_IMAGES[category.name];
   return (
     <motion.div
       data-ocid={`menu.category.item.${sectionIndex + 1}`}
-      initial={{ opacity: 0, y: 24 }}
+      initial={{ opacity: 0, y: 40 }}
       whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "-40px" }}
-      transition={{ duration: 0.45, delay: 0.1 }}
+      viewport={{ once: true, margin: "-30px" }}
+      transition={{
+        duration: 0.6,
+        delay: sectionIndex * 0.1,
+        ease: [0.25, 0.46, 0.45, 0.94],
+      }}
       className="menu-card-bg rounded-xl overflow-hidden mb-5"
     >
       {/* Category header stripe */}
@@ -129,42 +220,26 @@ function CategorySection({
           {icon}
         </span>
         <h2
-          className="font-display font-bold text-xl sm:text-2xl tracking-wider"
+          className="font-display font-bold text-xl sm:text-2xl tracking-[0.12em]"
           style={{
-            color: "oklch(0.90 0.13 72)",
-            textShadow: "0 1px 3px oklch(0.05 0.02 18 / 0.8)",
+            color: "oklch(0.96 0.015 70)",
+            textShadow: "0 1px 3px oklch(0.04 0.02 150 / 0.8)",
           }}
         >
           {category.name}
         </h2>
-        <div className="ml-auto text-primary/40 text-xs tracking-[0.4em] font-display">
+        <div
+          className="ml-auto text-xs tracking-[0.4em] font-display"
+          style={{ color: "oklch(0.75 0.15 80 / 0.7)" }}
+        >
           ✦
         </div>
       </div>
 
-      {/* Category food photo */}
-      {categoryImage && (
-        <div className="relative h-40 w-full overflow-hidden">
-          <img
-            src={categoryImage}
-            alt={`${category.name} dish`}
-            className="w-full h-full object-cover"
-          />
-          {/* Bottom gradient overlay to blend into card */}
-          <div
-            className="absolute inset-0"
-            style={{
-              background:
-                "linear-gradient(to bottom, oklch(0.05 0.02 18 / 0.05) 0%, oklch(0.05 0.02 18 / 0.1) 50%, oklch(0.16 0.06 18 / 0.85) 100%)",
-            }}
-          />
-        </div>
-      )}
-
-      {/* Menu items list */}
-      <div className="px-4 py-2">
+      {/* Square grid of dish cards */}
+      <div className="p-3 grid grid-cols-2 gap-3">
         {category.items.map((item, idx) => (
-          <MenuItemRow key={item.name} item={item} index={idx} onAdd={onAdd} />
+          <MenuItemCard key={item.name} item={item} index={idx} onAdd={onAdd} />
         ))}
       </div>
     </motion.div>
@@ -177,12 +252,14 @@ function LoadingSkeleton() {
       {[1, 2, 3].map((i) => (
         <div key={i} className="menu-card-bg rounded-xl overflow-hidden">
           <Skeleton className="h-14 w-full bg-muted" />
-          <Skeleton className="h-40 w-full bg-muted" />
-          <div className="px-4 py-2 space-y-3">
-            {[1, 2, 3].map((j) => (
-              <div key={j} className="flex justify-between py-2">
-                <Skeleton className="h-4 w-48 bg-muted" />
-                <Skeleton className="h-4 w-16 bg-muted" />
+          <div className="p-3 grid grid-cols-2 gap-3">
+            {[1, 2, 3, 4].map((j) => (
+              <div key={j} className="rounded-xl overflow-hidden">
+                <Skeleton
+                  className="w-full bg-muted"
+                  style={{ aspectRatio: "1 / 1" }}
+                />
+                <Skeleton className="h-10 w-full bg-muted mt-0.5" />
               </div>
             ))}
           </div>
@@ -214,21 +291,21 @@ function UpiPanel() {
       className="mt-3 rounded-xl px-4 py-3.5"
       style={{
         background:
-          "linear-gradient(135deg, oklch(0.22 0.07 55 / 0.3), oklch(0.18 0.06 40 / 0.4))",
-        border: "1px solid oklch(0.78 0.14 72 / 0.4)",
-        boxShadow: "inset 0 1px 0 oklch(0.78 0.14 72 / 0.15)",
+          "linear-gradient(135deg, oklch(0.18 0.08 150 / 0.4), oklch(0.13 0.05 150 / 0.5))",
+        border: "1px solid oklch(0.75 0.15 80 / 0.40)",
+        boxShadow: "inset 0 1px 0 oklch(0.75 0.15 80 / 0.12)",
       }}
     >
       <p
         className="text-xs font-body font-semibold uppercase tracking-wider mb-2.5"
-        style={{ color: "oklch(0.78 0.14 72 / 0.85)" }}
+        style={{ color: "oklch(0.75 0.15 80 / 0.85)" }}
       >
         ✦ UPI Payment ID
       </p>
       <div className="flex items-center justify-between gap-3">
         <span
           className="font-display font-bold text-base tracking-wide select-all"
-          style={{ color: "oklch(0.90 0.15 72)" }}
+          style={{ color: "oklch(0.96 0.015 70)" }}
         >
           {UPI_ID}
         </span>
@@ -238,9 +315,9 @@ function UpiPanel() {
           aria-label="Copy UPI ID"
           className="flex items-center gap-1.5 text-xs font-body font-semibold px-3 py-1.5 rounded-lg flex-shrink-0 transition-all"
           style={{
-            background: "oklch(0.78 0.14 72 / 0.15)",
-            border: "1px solid oklch(0.78 0.14 72 / 0.4)",
-            color: "oklch(0.90 0.13 72)",
+            background: "oklch(0.55 0.20 150 / 0.15)",
+            border: "1px solid oklch(0.75 0.15 80 / 0.45)",
+            color: "oklch(0.96 0.015 70)",
           }}
         >
           {copied ? (
@@ -258,7 +335,7 @@ function UpiPanel() {
       </div>
       <p
         className="text-xs font-body mt-2"
-        style={{ color: "oklch(0.78 0.14 72 / 0.55)" }}
+        style={{ color: "oklch(0.55 0.20 150 / 0.55)" }}
       >
         Is ID pe payment karke order bhejein.
       </p>
@@ -327,25 +404,25 @@ function OrderSheet({
         className="rounded-t-2xl max-h-[90vh] flex flex-col p-0"
         style={{
           background:
-            "linear-gradient(160deg, oklch(0.18 0.065 20), oklch(0.13 0.05 18))",
-          borderTop: "1px solid oklch(0.78 0.14 72 / 0.3)",
-          boxShadow: "0 -8px 40px oklch(0.05 0.02 18 / 0.8)",
+            "linear-gradient(160deg, oklch(0.12 0.05 150), oklch(0.08 0.03 150))",
+          borderTop: "1px solid oklch(0.55 0.20 150 / 0.35)",
+          boxShadow: "0 -8px 40px oklch(0.04 0.02 150 / 0.8)",
         }}
       >
         <SheetHeader
           className="px-5 pt-5 pb-3.5"
-          style={{ borderBottom: "1px solid oklch(0.78 0.14 72 / 0.2)" }}
+          style={{ borderBottom: "1px solid oklch(0.55 0.20 150 / 0.2)" }}
         >
           <SheetTitle
             className="font-display font-bold text-xl flex items-center gap-2.5"
             style={{
-              color: "oklch(0.90 0.13 72)",
-              textShadow: "0 0 20px oklch(0.78 0.14 72 / 0.4)",
+              color: "oklch(0.96 0.015 70)",
+              textShadow: "0 0 20px oklch(0.55 0.20 150 / 0.4)",
             }}
           >
             <ShoppingBag
               className="w-5 h-5"
-              style={{ color: "oklch(0.78 0.14 72)" }}
+              style={{ color: "oklch(0.75 0.15 80)" }}
             />
             Aapka Order
           </SheetTitle>
@@ -358,7 +435,7 @@ function OrderSheet({
               <p
                 data-ocid="order.empty_state"
                 className="text-center py-8 font-body text-lg"
-                style={{ color: "oklch(0.62 0.055 45)" }}
+                style={{ color: "oklch(0.52 0.05 140)" }}
               >
                 Cart khali hai. Menu se items add karein.
               </p>
@@ -370,8 +447,8 @@ function OrderSheet({
                     data-ocid={`order.item.${idx + 1}`}
                     className="flex items-center gap-3 rounded-xl px-3 py-2.5"
                     style={{
-                      background: "oklch(0.22 0.075 18 / 0.6)",
-                      border: "1px solid oklch(0.78 0.14 72 / 0.15)",
+                      background: "oklch(0.16 0.06 150 / 0.6)",
+                      border: "1px solid oklch(0.55 0.20 150 / 0.18)",
                     }}
                   >
                     <div className="flex-1 min-w-0">
@@ -380,7 +457,7 @@ function OrderSheet({
                       </p>
                       <p
                         className="text-sm font-display"
-                        style={{ color: "oklch(0.78 0.14 72)" }}
+                        style={{ color: "oklch(0.75 0.15 80)" }}
                       >
                         ₹{item.price} each
                       </p>
@@ -392,8 +469,8 @@ function OrderSheet({
                         onClick={() => onDecrease(item.name)}
                         className="w-6 h-6 rounded-full flex items-center justify-center transition-colors"
                         style={{
-                          background: "oklch(0.25 0.07 20)",
-                          border: "1px solid oklch(0.35 0.08 22)",
+                          background: "oklch(0.16 0.05 150)",
+                          border: "1px solid oklch(0.28 0.10 150)",
                         }}
                         aria-label={`Decrease ${item.name}`}
                       >
@@ -411,14 +488,14 @@ function OrderSheet({
                         className="w-6 h-6 rounded-full flex items-center justify-center transition-colors"
                         style={{
                           background:
-                            "linear-gradient(135deg, oklch(0.35 0.16 22), oklch(0.28 0.13 18))",
-                          border: "1px solid oklch(0.78 0.14 72 / 0.25)",
+                            "linear-gradient(135deg, oklch(0.48 0.20 150), oklch(0.35 0.14 150))",
+                          border: "1px solid oklch(0.55 0.20 150 / 0.35)",
                         }}
                         aria-label={`Increase ${item.name}`}
                       >
                         <Plus
                           className="w-3 h-3"
-                          style={{ color: "oklch(0.86 0.17 68)" }}
+                          style={{ color: "oklch(0.97 0.01 70)" }}
                           strokeWidth={3}
                         />
                       </button>
@@ -427,8 +504,8 @@ function OrderSheet({
                         onClick={() => onRemove(item.name)}
                         className="w-6 h-6 rounded-full flex items-center justify-center transition-colors ml-1"
                         style={{
-                          background: "oklch(0.25 0.1 22 / 0.5)",
-                          border: "1px solid oklch(0.55 0.22 27 / 0.4)",
+                          background: "oklch(0.16 0.08 25 / 0.5)",
+                          border: "1px solid oklch(0.50 0.22 25 / 0.4)",
                         }}
                         aria-label={`Remove ${item.name}`}
                       >
@@ -438,7 +515,7 @@ function OrderSheet({
                     <div className="flex-shrink-0 w-16 text-right">
                       <span
                         className="font-display font-bold text-sm"
-                        style={{ color: "oklch(0.86 0.17 68)" }}
+                        style={{ color: "oklch(0.75 0.15 80)" }}
                       >
                         ₹{item.price * item.quantity}
                       </span>
@@ -450,9 +527,9 @@ function OrderSheet({
                   className="flex justify-between items-center px-4 py-3 rounded-xl"
                   style={{
                     background:
-                      "linear-gradient(135deg, oklch(0.22 0.07 55 / 0.25), oklch(0.18 0.06 40 / 0.3))",
-                    border: "1px solid oklch(0.78 0.14 72 / 0.35)",
-                    boxShadow: "inset 0 1px 0 oklch(0.78 0.14 72 / 0.1)",
+                      "linear-gradient(135deg, oklch(0.18 0.08 150 / 0.35), oklch(0.13 0.05 150 / 0.4))",
+                    border: "1px solid oklch(0.75 0.15 80 / 0.35)",
+                    boxShadow: "inset 0 1px 0 oklch(0.75 0.15 80 / 0.10)",
                   }}
                 >
                   <span className="font-display font-bold text-base text-foreground">
@@ -460,7 +537,7 @@ function OrderSheet({
                   </span>
                   <span
                     className="font-display font-black text-xl text-shadow-gold"
-                    style={{ color: "oklch(0.90 0.15 72)" }}
+                    style={{ color: "oklch(0.75 0.15 80)" }}
                   >
                     ₹{grandTotal}
                   </span>
@@ -472,7 +549,7 @@ function OrderSheet({
               <>
                 <div
                   className="ornamental-divider text-xs font-display tracking-[0.3em]"
-                  style={{ color: "oklch(0.78 0.14 72 / 0.4)" }}
+                  style={{ color: "oklch(0.75 0.15 80 / 0.4)" }}
                 >
                   ✦ ✦ ✦
                 </div>
@@ -481,7 +558,7 @@ function OrderSheet({
                 <div className="space-y-4">
                   <h3
                     className="font-display font-bold text-base uppercase tracking-wider"
-                    style={{ color: "oklch(0.86 0.14 72)" }}
+                    style={{ color: "oklch(0.75 0.15 80)" }}
                   >
                     Delivery Details
                   </h3>
@@ -502,8 +579,8 @@ function OrderSheet({
                       onChange={(e) => setNaam(e.target.value)}
                       className="font-body text-foreground placeholder:text-muted-foreground/60"
                       style={{
-                        background: "oklch(0.22 0.075 18 / 0.7)",
-                        border: "1px solid oklch(0.35 0.08 22 / 0.8)",
+                        background: "oklch(0.16 0.06 150 / 0.7)",
+                        border: "1px solid oklch(0.30 0.10 150 / 0.8)",
                       }}
                     />
                     {errors.naam && (
@@ -533,8 +610,8 @@ function OrderSheet({
                       onChange={(e) => setPhone(e.target.value)}
                       className="font-body text-foreground placeholder:text-muted-foreground/60"
                       style={{
-                        background: "oklch(0.22 0.075 18 / 0.7)",
-                        border: "1px solid oklch(0.35 0.08 22 / 0.8)",
+                        background: "oklch(0.16 0.06 150 / 0.7)",
+                        border: "1px solid oklch(0.30 0.10 150 / 0.8)",
                       }}
                     />
                     {errors.phone && (
@@ -564,8 +641,8 @@ function OrderSheet({
                       rows={2}
                       className="font-body text-foreground placeholder:text-muted-foreground/60 resize-none"
                       style={{
-                        background: "oklch(0.22 0.075 18 / 0.7)",
-                        border: "1px solid oklch(0.35 0.08 22 / 0.8)",
+                        background: "oklch(0.16 0.06 150 / 0.7)",
+                        border: "1px solid oklch(0.30 0.10 150 / 0.8)",
                       }}
                     />
                     {errors.address && (
@@ -593,12 +670,12 @@ function OrderSheet({
                         style={{
                           background:
                             payment === "Cash on Delivery"
-                              ? "oklch(0.26 0.08 22 / 0.7)"
-                              : "oklch(0.22 0.075 18 / 0.5)",
+                              ? "oklch(0.20 0.09 150 / 0.7)"
+                              : "oklch(0.14 0.04 150 / 0.5)",
                           border:
                             payment === "Cash on Delivery"
-                              ? "1px solid oklch(0.78 0.14 72 / 0.5)"
-                              : "1px solid oklch(0.35 0.08 22 / 0.6)",
+                              ? "1px solid oklch(0.55 0.20 150 / 0.55)"
+                              : "1px solid oklch(0.26 0.08 150 / 0.6)",
                         }}
                       >
                         <RadioGroupItem
@@ -619,12 +696,12 @@ function OrderSheet({
                         style={{
                           background:
                             payment === "UPI"
-                              ? "oklch(0.26 0.08 22 / 0.7)"
-                              : "oklch(0.22 0.075 18 / 0.5)",
+                              ? "oklch(0.20 0.09 150 / 0.7)"
+                              : "oklch(0.14 0.04 150 / 0.5)",
                           border:
                             payment === "UPI"
-                              ? "1px solid oklch(0.78 0.14 72 / 0.5)"
-                              : "1px solid oklch(0.35 0.08 22 / 0.6)",
+                              ? "1px solid oklch(0.55 0.20 150 / 0.55)"
+                              : "1px solid oklch(0.26 0.08 150 / 0.6)",
                         }}
                       >
                         <RadioGroupItem
@@ -655,12 +732,11 @@ function OrderSheet({
                   className="w-full h-13 rounded-xl font-display font-bold text-base uppercase tracking-widest transition-all active:scale-[0.98] py-3.5"
                   style={{
                     background:
-                      "linear-gradient(135deg, oklch(0.30 0.16 22) 0%, oklch(0.22 0.12 18) 100%)",
-                    border: "1px solid oklch(0.78 0.14 72 / 0.5)",
-                    color: "oklch(0.90 0.13 72)",
-                    textShadow: "0 0 12px oklch(0.78 0.14 72 / 0.4)",
+                      "linear-gradient(135deg, oklch(0.50 0.20 150) 0%, oklch(0.38 0.16 150) 100%)",
+                    border: "1px solid oklch(0.65 0.20 150 / 0.5)",
+                    color: "oklch(0.97 0.01 70)",
                     boxShadow:
-                      "0 4px 20px oklch(0.05 0.02 18 / 0.6), inset 0 1px 0 oklch(0.78 0.14 72 / 0.2)",
+                      "0 4px 20px oklch(0.50 0.20 150 / 0.40), inset 0 1px 0 oklch(0.96 0.015 70 / 0.20)",
                   }}
                 >
                   <span className="text-lg mr-2">📲</span>
@@ -726,7 +802,7 @@ export default function App() {
       <header className="relative overflow-hidden">
         <div className="relative h-52 sm:h-64">
           <img
-            src="/assets/generated/hero-chinese-veg-food.dim_800x400.jpg"
+            src="/assets/generated/hero-chinese-veg-green.dim_800x400.jpg"
             alt="Chinese vegetarian food spread"
             className="w-full h-full object-cover"
           />
@@ -734,11 +810,14 @@ export default function App() {
         </div>
 
         {/* Restaurant name panel */}
-        <div
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, ease: [0.25, 0.46, 0.45, 0.94] }}
           className="relative px-4 pt-5 pb-6 text-center overflow-hidden"
           style={{
             background:
-              "linear-gradient(180deg, oklch(0.13 0.055 18) 0%, oklch(0.15 0.06 18) 100%)",
+              "linear-gradient(180deg, oklch(0.08 0.04 150) 0%, oklch(0.10 0.04 150) 100%)",
           }}
         >
           {/* Top decorative line */}
@@ -746,13 +825,19 @@ export default function App() {
             className="absolute top-0 left-0 right-0 h-px"
             style={{
               background:
-                "linear-gradient(90deg, transparent, oklch(0.78 0.14 72 / 0.7), transparent)",
+                "linear-gradient(90deg, transparent, oklch(0.75 0.15 80 / 0.7), transparent)",
             }}
           />
 
           {/* Veg badge */}
           <div className="flex justify-center mb-4">
-            <Badge className="bg-green-700/90 text-white border-0 font-body font-semibold uppercase tracking-widest text-xs px-4 py-1.5 gap-1.5">
+            <Badge
+              className="border-0 font-body font-semibold uppercase tracking-widest text-xs px-4 py-1.5 gap-1.5"
+              style={{
+                background: "oklch(0.35 0.18 150 / 0.9)",
+                color: "oklch(0.96 0.015 70)",
+              }}
+            >
               <Leaf className="w-3.5 h-3.5" />
               Only Veg Food
             </Badge>
@@ -760,27 +845,33 @@ export default function App() {
 
           {/* Main restaurant title */}
           <div className="mb-3 relative">
-            {/* Decorative Chinese-inspired corner marks */}
-            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-primary/20 text-2xl font-display select-none">
+            {/* Decorative corner marks */}
+            <div
+              className="absolute left-4 top-1/2 -translate-y-1/2 text-2xl font-display select-none"
+              style={{ color: "oklch(0.75 0.15 80 / 0.25)" }}
+            >
               ❰
             </div>
-            <div className="absolute right-4 top-1/2 -translate-y-1/2 text-primary/20 text-2xl font-display select-none">
+            <div
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-2xl font-display select-none"
+              style={{ color: "oklch(0.75 0.15 80 / 0.25)" }}
+            >
               ❱
             </div>
 
-            <h1 className="font-display font-bold leading-none tracking-tight text-shadow-gold">
+            <h1 className="font-display font-bold leading-none tracking-[0.12em] text-shadow-gold">
               <span
                 className="block text-4xl sm:text-5xl"
-                style={{ color: "oklch(0.92 0.14 72)" }}
+                style={{ color: "oklch(0.90 0.06 70)" }}
               >
                 The Hot
               </span>
               <span
                 className="block text-5xl sm:text-6xl mt-0.5"
                 style={{
-                  color: "oklch(0.96 0.10 75)",
+                  color: "oklch(0.60 0.22 145)",
                   textShadow:
-                    "0 0 40px oklch(0.78 0.14 72 / 0.5), 0 2px 4px oklch(0.05 0.02 18 / 0.8)",
+                    "0 0 40px oklch(0.55 0.20 150 / 0.55), 0 2px 4px oklch(0.04 0.02 150 / 0.8)",
                 }}
               >
                 Chilly Yammy
@@ -794,12 +885,12 @@ export default function App() {
               className="h-px flex-1 max-w-20"
               style={{
                 background:
-                  "linear-gradient(90deg, transparent, oklch(0.78 0.14 72 / 0.5))",
+                  "linear-gradient(90deg, transparent, oklch(0.75 0.15 80 / 0.5))",
               }}
             />
             <span
               className="text-xs font-display tracking-[0.5em] uppercase"
-              style={{ color: "oklch(0.78 0.14 72 / 0.7)" }}
+              style={{ color: "oklch(0.75 0.15 80 / 0.8)" }}
             >
               ✦ ✦ ✦
             </span>
@@ -807,18 +898,18 @@ export default function App() {
               className="h-px flex-1 max-w-20"
               style={{
                 background:
-                  "linear-gradient(270deg, transparent, oklch(0.78 0.14 72 / 0.5))",
+                  "linear-gradient(270deg, transparent, oklch(0.75 0.15 80 / 0.5))",
               }}
             />
           </div>
 
           <p
             className="font-body italic text-sm tracking-widest"
-            style={{ color: "oklch(0.62 0.055 45)" }}
+            style={{ color: "oklch(0.52 0.06 140)" }}
           >
             Fresh · Spicy · Delicious
           </p>
-        </div>
+        </motion.div>
       </header>
 
       {/* Menu Content */}
@@ -827,11 +918,16 @@ export default function App() {
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
+          transition={{
+            duration: 0.5,
+            delay: 0.2,
+            ease: [0.25, 0.46, 0.45, 0.94],
+          }}
           className="text-center mb-6"
         >
           <p
             className="font-display text-xs tracking-[0.45em] uppercase mb-2"
-            style={{ color: "oklch(0.78 0.14 72 / 0.6)" }}
+            style={{ color: "oklch(0.75 0.15 80 / 0.7)" }}
           >
             ✦ Our Menu ✦
           </p>
@@ -839,7 +935,7 @@ export default function App() {
             className="h-px mx-auto w-16"
             style={{
               background:
-                "linear-gradient(90deg, transparent, oklch(0.78 0.14 72 / 0.5), transparent)",
+                "linear-gradient(90deg, transparent, oklch(0.75 0.15 80 / 0.5), transparent)",
             }}
           />
         </motion.div>
@@ -856,7 +952,7 @@ export default function App() {
             >
               <p
                 className="font-body text-base"
-                style={{ color: "oklch(0.62 0.055 45)" }}
+                style={{ color: "oklch(0.52 0.05 140)" }}
               >
                 Menu load karne mein problem aa gayi. Please refresh karein.
               </p>
@@ -872,7 +968,7 @@ export default function App() {
             >
               {menu.length === 0 ? (
                 <div data-ocid="menu.empty_state" className="text-center py-12">
-                  <p style={{ color: "oklch(0.62 0.055 45)" }}>
+                  <p style={{ color: "oklch(0.52 0.05 140)" }}>
                     Abhi koi items nahi hain.
                   </p>
                 </div>
@@ -896,8 +992,8 @@ export default function App() {
         className="mt-4 px-4 py-8 text-center"
         style={{
           background:
-            "linear-gradient(180deg, oklch(0.15 0.06 18) 0%, oklch(0.11 0.04 18) 100%)",
-          borderTop: "1px solid oklch(0.78 0.14 72 / 0.2)",
+            "linear-gradient(180deg, oklch(0.09 0.04 150) 0%, oklch(0.06 0.02 150) 100%)",
+          borderTop: "1px solid oklch(0.55 0.20 150 / 0.2)",
         }}
       >
         {/* Top ornament */}
@@ -906,12 +1002,12 @@ export default function App() {
             className="h-px flex-1 max-w-20"
             style={{
               background:
-                "linear-gradient(90deg, transparent, oklch(0.78 0.14 72 / 0.35))",
+                "linear-gradient(90deg, transparent, oklch(0.75 0.15 80 / 0.35))",
             }}
           />
           <span
             className="text-xs font-display tracking-[0.4em]"
-            style={{ color: "oklch(0.78 0.14 72 / 0.5)" }}
+            style={{ color: "oklch(0.75 0.15 80 / 0.6)" }}
           >
             ✦
           </span>
@@ -919,14 +1015,14 @@ export default function App() {
             className="h-px flex-1 max-w-20"
             style={{
               background:
-                "linear-gradient(270deg, transparent, oklch(0.78 0.14 72 / 0.35))",
+                "linear-gradient(270deg, transparent, oklch(0.75 0.15 80 / 0.35))",
             }}
           />
         </div>
 
         <p
           className="font-display text-xs uppercase tracking-[0.4em] mb-4"
-          style={{ color: "oklch(0.78 0.14 72 / 0.65)" }}
+          style={{ color: "oklch(0.75 0.15 80 / 0.75)" }}
         >
           📞 Order Karein
         </p>
@@ -936,10 +1032,10 @@ export default function App() {
             data-ocid="menu.primary_button"
             className="flex items-center gap-2 rounded-full px-5 py-2 font-display font-semibold tracking-wide transition-all text-sm hover:scale-105"
             style={{
-              background: "oklch(0.78 0.14 72 / 0.12)",
-              border: "1px solid oklch(0.78 0.14 72 / 0.35)",
-              color: "oklch(0.90 0.13 72)",
-              boxShadow: "0 2px 12px oklch(0.05 0.02 18 / 0.4)",
+              background: "oklch(0.50 0.20 150 / 0.12)",
+              border: "1px solid oklch(0.55 0.20 150 / 0.40)",
+              color: "oklch(0.90 0.05 70)",
+              boxShadow: "0 2px 12px oklch(0.04 0.02 150 / 0.4)",
             }}
           >
             <Phone className="w-4 h-4" />
@@ -950,10 +1046,10 @@ export default function App() {
             data-ocid="menu.secondary_button"
             className="flex items-center gap-2 rounded-full px-5 py-2 font-display font-semibold tracking-wide transition-all text-sm hover:scale-105"
             style={{
-              background: "oklch(0.78 0.14 72 / 0.12)",
-              border: "1px solid oklch(0.78 0.14 72 / 0.35)",
-              color: "oklch(0.90 0.13 72)",
-              boxShadow: "0 2px 12px oklch(0.05 0.02 18 / 0.4)",
+              background: "oklch(0.50 0.20 150 / 0.12)",
+              border: "1px solid oklch(0.55 0.20 150 / 0.40)",
+              color: "oklch(0.90 0.05 70)",
+              boxShadow: "0 2px 12px oklch(0.04 0.02 150 / 0.4)",
             }}
           >
             <Phone className="w-4 h-4" />
@@ -963,18 +1059,18 @@ export default function App() {
 
         <div
           className="pt-4"
-          style={{ borderTop: "1px solid oklch(0.78 0.14 72 / 0.12)" }}
+          style={{ borderTop: "1px solid oklch(0.55 0.20 150 / 0.12)" }}
         >
           <p
             className="text-xs font-body"
-            style={{ color: "oklch(0.45 0.04 30)" }}
+            style={{ color: "oklch(0.38 0.05 140)" }}
           >
             © {new Date().getFullYear()}. Built with ❤️ using{" "}
             <a
               href={`https://caffeine.ai?utm_source=caffeine-footer&utm_medium=referral&utm_content=${encodeURIComponent(typeof window !== "undefined" ? window.location.hostname : "")}`}
               target="_blank"
               rel="noopener noreferrer"
-              style={{ color: "oklch(0.60 0.08 55)" }}
+              style={{ color: "oklch(0.55 0.18 150)" }}
               className="hover:opacity-80 transition-opacity"
             >
               caffeine.ai
@@ -983,7 +1079,7 @@ export default function App() {
         </div>
       </footer>
 
-      {/* Floating Cart Button — gold/amber */}
+      {/* Floating Cart Button — emerald green */}
       <AnimatePresence>
         {totalItems > 0 && (
           <motion.button
@@ -997,11 +1093,11 @@ export default function App() {
             className="fixed bottom-6 right-5 z-50 flex items-center gap-2.5 rounded-full px-5 py-3.5 font-display font-bold text-sm uppercase tracking-wide transition-colors"
             style={{
               background:
-                "linear-gradient(135deg, oklch(0.70 0.16 68) 0%, oklch(0.62 0.18 58) 100%)",
-              color: "oklch(0.12 0.04 20)",
+                "linear-gradient(135deg, oklch(0.50 0.20 150) 0%, oklch(0.38 0.16 150) 100%)",
+              color: "oklch(0.97 0.01 70)",
               boxShadow:
-                "0 4px 20px oklch(0.78 0.14 72 / 0.45), 0 8px 32px oklch(0.05 0.02 18 / 0.5)",
-              border: "1px solid oklch(0.86 0.17 72 / 0.5)",
+                "0 4px 20px oklch(0.50 0.20 150 / 0.55), 0 8px 32px oklch(0.04 0.02 150 / 0.5)",
+              border: "1px solid oklch(0.65 0.20 150 / 0.5)",
             }}
             aria-label={`View cart: ${totalItems} items`}
           >
@@ -1009,7 +1105,7 @@ export default function App() {
             <span>Cart</span>
             <span
               className="rounded-full w-6 h-6 flex items-center justify-center text-xs font-black"
-              style={{ background: "oklch(0.12 0.04 20 / 0.3)" }}
+              style={{ background: "oklch(0.08 0.04 150 / 0.40)" }}
             >
               {totalItems}
             </span>

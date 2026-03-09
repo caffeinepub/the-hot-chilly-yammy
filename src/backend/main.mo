@@ -62,9 +62,7 @@ actor {
     {
       name = "Soup";
       items = [
-        { name = "Sweet Corn Soup"; price = 10; note = null },
         { name = "Hot & Sour Soup"; price = 10; note = null },
-        { name = "Manchow Soup"; price = 10; note = null },
       ];
     },
   ];
