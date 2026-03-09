@@ -12,6 +12,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Check,
@@ -20,11 +21,13 @@ import {
   Minus,
   Phone,
   Plus,
+  QrCode,
   ShoppingBag,
   Trash2,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import { useState } from "react";
+import { QRCodeCanvas } from "qrcode.react";
+import { useEffect, useRef, useState } from "react";
 import type { Category, MenuItem } from "./backend";
 import { useGetMenu } from "./hooks/useQueries";
 
@@ -33,6 +36,7 @@ const CATEGORY_ICONS: Record<string, string> = {
   Momos: "🥟",
   Noodles: "🍜",
   Manchurian: "🥦",
+  Rice: "🍚",
   Soup: "🍲",
 };
 
@@ -60,27 +64,465 @@ const DISH_IMAGES: Record<string, string> = {
   "Paneer Chilli": "/assets/uploads/chilli-paneer-recipe-1-1.jpg",
   "Mushroom 65": "/assets/generated/mushroom-65.dim_400x400.jpg",
   "Paneer 65": "/assets/generated/paneer-65.dim_400x400.jpg",
+  // Rice
+  "Veg Fry Rice": "/assets/generated/veg-fry-rice.dim_400x400.jpg",
+  "Paneer Fry Rice": "/assets/generated/paneer-fry-rice.dim_400x400.jpg",
   // Soup
   "Hot & Sour Soup": "/assets/generated/hot-sour-soup.dim_400x400.jpg",
 };
 
-// Gradient fallback if image not available
 const FALLBACK_GRADIENT =
   "linear-gradient(135deg, oklch(0.20 0.10 150) 0%, oklch(0.30 0.16 145) 100%)";
 
 type CartItem = { name: string; price: number; quantity: number };
+type OfferState = { discountPercent: number; active: boolean };
 
+const OFFER_KEY = "hcy_offer";
+const ADMIN_PASSWORD = "8228096793";
+
+function getOffer(): OfferState {
+  try {
+    const raw = localStorage.getItem(OFFER_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch {}
+  return { discountPercent: 0, active: false };
+}
+
+function saveOffer(offer: OfferState) {
+  localStorage.setItem(OFFER_KEY, JSON.stringify(offer));
+}
+
+// ---------- Admin Page ----------
+function AdminPage({ onBack }: { onBack: () => void }) {
+  const [password, setPassword] = useState("");
+  const [authed, setAuthed] = useState(false);
+  const [error, setError] = useState("");
+  const [offer, setOffer] = useState<OfferState>(getOffer);
+  const [saved, setSaved] = useState(false);
+
+  const handleLogin = () => {
+    if (password === ADMIN_PASSWORD) {
+      setAuthed(true);
+      setError("");
+    } else {
+      setError("Wrong password. Please try again.");
+    }
+  };
+
+  const handleSave = () => {
+    saveOffer(offer);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  };
+
+  return (
+    <div
+      data-ocid="admin.page"
+      className="min-h-screen font-body flex flex-col items-center justify-center px-4 py-12"
+      style={{
+        background:
+          "linear-gradient(160deg, oklch(0.08 0.04 150), oklch(0.05 0.02 150))",
+      }}
+    >
+      {/* Back button */}
+      <button
+        type="button"
+        data-ocid="admin.back_button"
+        onClick={onBack}
+        className="absolute top-5 left-5 flex items-center gap-2 font-body text-sm transition-opacity hover:opacity-80"
+        style={{ color: "oklch(0.75 0.15 80)" }}
+      >
+        ← Back to Menu
+      </button>
+
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="w-full max-w-sm"
+      >
+        {/* Header */}
+        <div className="text-center mb-8">
+          <div
+            className="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-4"
+            style={{
+              background:
+                "linear-gradient(135deg, oklch(0.48 0.20 150), oklch(0.35 0.14 150))",
+              boxShadow: "0 8px 24px oklch(0.48 0.20 150 / 0.4)",
+            }}
+          >
+            <span className="text-2xl">🔐</span>
+          </div>
+          <h1
+            className="font-display font-bold text-2xl"
+            style={{ color: "oklch(0.96 0.015 70)" }}
+          >
+            Admin Panel
+          </h1>
+          <p
+            className="text-sm font-body mt-1"
+            style={{ color: "oklch(0.55 0.08 140)" }}
+          >
+            The Hot Chilly Yammy
+          </p>
+        </div>
+
+        <div
+          className="rounded-2xl p-6"
+          style={{
+            background:
+              "linear-gradient(160deg, oklch(0.12 0.05 150), oklch(0.09 0.03 150))",
+            border: "1px solid oklch(0.55 0.20 150 / 0.25)",
+            boxShadow: "0 8px 40px oklch(0.04 0.02 150 / 0.6)",
+          }}
+        >
+          {!authed ? (
+            /* Login form */
+            <div className="space-y-4">
+              <div className="space-y-1.5">
+                <Label
+                  htmlFor="admin-pass"
+                  className="font-body font-semibold text-sm"
+                  style={{ color: "oklch(0.80 0.05 70)" }}
+                >
+                  Password
+                </Label>
+                <Input
+                  id="admin-pass"
+                  data-ocid="admin.input"
+                  type="password"
+                  placeholder="Enter admin password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleLogin()}
+                  className="font-body"
+                  style={{
+                    background: "oklch(0.16 0.06 150 / 0.7)",
+                    border: "1px solid oklch(0.30 0.10 150 / 0.8)",
+                    color: "oklch(0.96 0.015 70)",
+                  }}
+                />
+              </div>
+              {error && (
+                <p
+                  data-ocid="admin.error_state"
+                  className="text-sm font-body"
+                  style={{ color: "oklch(0.65 0.22 25)" }}
+                >
+                  {error}
+                </p>
+              )}
+              <button
+                type="button"
+                data-ocid="admin.submit_button"
+                onClick={handleLogin}
+                className="w-full py-3 rounded-xl font-display font-bold text-sm uppercase tracking-wider transition-all active:scale-[0.98]"
+                style={{
+                  background:
+                    "linear-gradient(135deg, oklch(0.50 0.20 150) 0%, oklch(0.38 0.16 150) 100%)",
+                  color: "oklch(0.97 0.01 70)",
+                  boxShadow: "0 4px 20px oklch(0.50 0.20 150 / 0.40)",
+                }}
+              >
+                Login
+              </button>
+            </div>
+          ) : (
+            /* Offer control panel */
+            <div className="space-y-5">
+              <div
+                className="rounded-xl px-4 py-3"
+                style={{
+                  background: "oklch(0.16 0.07 150 / 0.5)",
+                  border: "1px solid oklch(0.55 0.20 150 / 0.20)",
+                }}
+              >
+                <p
+                  className="font-body text-xs uppercase tracking-widest mb-3"
+                  style={{ color: "oklch(0.75 0.15 80 / 0.8)" }}
+                >
+                  ✦ Offer Settings
+                </p>
+
+                {/* Discount percent */}
+                <div className="space-y-2 mb-4">
+                  <Label
+                    htmlFor="discount-pct"
+                    className="font-body font-semibold text-sm"
+                    style={{ color: "oklch(0.90 0.05 70)" }}
+                  >
+                    Discount % (0–100)
+                  </Label>
+                  <Input
+                    id="discount-pct"
+                    data-ocid="admin.discount_input"
+                    type="number"
+                    min={0}
+                    max={100}
+                    value={offer.discountPercent}
+                    onChange={(e) =>
+                      setOffer((prev) => ({
+                        ...prev,
+                        discountPercent: Math.min(
+                          100,
+                          Math.max(0, Number(e.target.value)),
+                        ),
+                      }))
+                    }
+                    className="font-display font-bold text-lg"
+                    style={{
+                      background: "oklch(0.16 0.06 150 / 0.7)",
+                      border: "1px solid oklch(0.30 0.10 150 / 0.8)",
+                      color: "oklch(0.75 0.15 80)",
+                    }}
+                  />
+                </div>
+
+                {/* Active toggle */}
+                <div className="flex items-center justify-between">
+                  <Label
+                    htmlFor="offer-active"
+                    className="font-body font-semibold text-sm"
+                    style={{ color: "oklch(0.90 0.05 70)" }}
+                  >
+                    Offer Active
+                  </Label>
+                  <Switch
+                    id="offer-active"
+                    data-ocid="admin.offer_switch"
+                    checked={offer.active}
+                    onCheckedChange={(v) =>
+                      setOffer((prev) => ({ ...prev, active: v }))
+                    }
+                  />
+                </div>
+              </div>
+
+              {/* Preview */}
+              {offer.active && offer.discountPercent > 0 && (
+                <div
+                  className="rounded-xl px-4 py-3 text-center"
+                  style={{
+                    background:
+                      "linear-gradient(135deg, oklch(0.18 0.10 80 / 0.3), oklch(0.14 0.08 80 / 0.2))",
+                    border: "1px solid oklch(0.75 0.15 80 / 0.4)",
+                  }}
+                >
+                  <p
+                    className="font-display font-bold text-sm"
+                    style={{ color: "oklch(0.75 0.15 80)" }}
+                  >
+                    🎉 {offer.discountPercent}% OFF — Live Preview
+                  </p>
+                </div>
+              )}
+
+              <button
+                type="button"
+                data-ocid="admin.save_button"
+                onClick={handleSave}
+                className="w-full py-3 rounded-xl font-display font-bold text-sm uppercase tracking-wider transition-all active:scale-[0.98]"
+                style={{
+                  background: saved
+                    ? "linear-gradient(135deg, oklch(0.50 0.18 150), oklch(0.38 0.14 150))"
+                    : "linear-gradient(135deg, oklch(0.68 0.14 80), oklch(0.55 0.16 75))",
+                  color: "oklch(0.08 0.03 150)",
+                  boxShadow: "0 4px 20px oklch(0.68 0.14 80 / 0.35)",
+                }}
+              >
+                {saved ? "✓ Saved!" : "Save Offer"}
+              </button>
+            </div>
+          )}
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
+// ---------- QR Code Page ----------
+function QrPage({ onBack }: { onBack: () => void }) {
+  const qrRef = useRef<HTMLCanvasElement>(null);
+  const appUrl =
+    typeof window !== "undefined"
+      ? window.location.origin + window.location.pathname
+      : "https://thehot chillyyammy.app";
+
+  const handleDownload = () => {
+    const canvas = document.querySelector(
+      "#qr-canvas canvas",
+    ) as HTMLCanvasElement | null;
+    if (!canvas) return;
+    const link = document.createElement("a");
+    link.download = "HotChillyYammy-QR.png";
+    link.href = canvas.toDataURL("image/png");
+    link.click();
+  };
+
+  return (
+    <div
+      data-ocid="qr.page"
+      className="min-h-screen font-body flex flex-col items-center justify-center px-4 py-16"
+      style={{
+        background:
+          "linear-gradient(160deg, oklch(0.08 0.04 150), oklch(0.05 0.02 150))",
+      }}
+    >
+      <button
+        type="button"
+        data-ocid="qr.back_button"
+        onClick={onBack}
+        className="absolute top-5 left-5 flex items-center gap-2 font-body text-sm transition-opacity hover:opacity-80"
+        style={{ color: "oklch(0.75 0.15 80)" }}
+      >
+        ← Back to Menu
+      </button>
+
+      <motion.div
+        initial={{ opacity: 0, scale: 0.92 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.5 }}
+        className="w-full max-w-xs text-center"
+      >
+        {/* Title */}
+        <div className="mb-8">
+          <div
+            className="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-4"
+            style={{
+              background:
+                "linear-gradient(135deg, oklch(0.68 0.14 80), oklch(0.55 0.16 75))",
+              boxShadow: "0 8px 24px oklch(0.68 0.14 80 / 0.4)",
+            }}
+          >
+            <QrCode
+              className="w-8 h-8"
+              style={{ color: "oklch(0.08 0.03 150)" }}
+            />
+          </div>
+          <h1
+            className="font-display font-bold text-2xl"
+            style={{ color: "oklch(0.96 0.015 70)" }}
+          >
+            App QR Code
+          </h1>
+          <p
+            className="text-sm font-body mt-1"
+            style={{ color: "oklch(0.55 0.08 140)" }}
+          >
+            The Hot Chilly Yammy
+          </p>
+        </div>
+
+        {/* QR Code card */}
+        <div
+          className="rounded-2xl p-6 mb-6"
+          style={{
+            background: "oklch(0.97 0.01 70)",
+            boxShadow: "0 16px 48px oklch(0.04 0.02 150 / 0.7)",
+          }}
+        >
+          <div id="qr-canvas" className="flex items-center justify-center">
+            <QRCodeCanvas
+              ref={qrRef}
+              value={appUrl}
+              size={220}
+              bgColor="oklch(0.97 0.01 70)"
+              fgColor="oklch(0.10 0.04 150)"
+              level="H"
+              includeMargin={false}
+            />
+          </div>
+        </div>
+
+        <p
+          className="font-display text-sm mb-6 leading-relaxed"
+          style={{ color: "oklch(0.75 0.10 70)" }}
+        >
+          📱 Yeh QR code scan karke seedha app khulega
+        </p>
+
+        <button
+          type="button"
+          data-ocid="qr.download_button"
+          onClick={handleDownload}
+          className="w-full py-3.5 rounded-xl font-display font-bold text-sm uppercase tracking-wider transition-all active:scale-[0.98]"
+          style={{
+            background:
+              "linear-gradient(135deg, oklch(0.68 0.14 80), oklch(0.55 0.16 75))",
+            color: "oklch(0.08 0.03 150)",
+            boxShadow: "0 4px 20px oklch(0.68 0.14 80 / 0.35)",
+          }}
+        >
+          ⬇ Download QR Code
+        </button>
+
+        <p
+          className="mt-4 text-xs font-body break-all"
+          style={{ color: "oklch(0.40 0.05 140)" }}
+        >
+          {appUrl}
+        </p>
+      </motion.div>
+    </div>
+  );
+}
+
+// ---------- Offer Banner ----------
+function OfferBanner({ offer }: { offer: OfferState }) {
+  if (!offer.active || offer.discountPercent <= 0) return null;
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: -10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4 }}
+      data-ocid="menu.offer_banner"
+      className="mx-4 mt-4 rounded-xl px-4 py-3 text-center"
+      style={{
+        background:
+          "linear-gradient(135deg, oklch(0.18 0.10 80 / 0.35), oklch(0.14 0.08 80 / 0.25))",
+        border: "1px solid oklch(0.75 0.15 80 / 0.5)",
+        boxShadow:
+          "0 4px 20px oklch(0.68 0.14 80 / 0.15), inset 0 1px 0 oklch(0.75 0.15 80 / 0.15)",
+      }}
+    >
+      <p
+        className="font-display font-bold text-base tracking-wide"
+        style={{
+          color: "oklch(0.80 0.18 80)",
+          textShadow: "0 0 16px oklch(0.75 0.15 80 / 0.4)",
+        }}
+      >
+        🎉 Special Offer: {offer.discountPercent}% OFF on all items!
+      </p>
+      <p
+        className="text-xs font-body mt-0.5"
+        style={{ color: "oklch(0.75 0.15 80 / 0.75)" }}
+      >
+        Aaj sirf limited time ke liye!
+      </p>
+    </motion.div>
+  );
+}
+
+// ---------- Menu Item Card ----------
 function MenuItemCard({
   item,
   index,
   onAdd,
+  offer,
 }: {
   item: MenuItem;
   index: number;
   onAdd: (item: MenuItem) => void;
+  offer: OfferState;
 }) {
   const markerIndex = index + 1;
   const dishImage = DISH_IMAGES[item.name];
+  const originalPrice = Number(item.price);
+  const discounted =
+    offer.active && offer.discountPercent > 0
+      ? Math.round(originalPrice * (1 - offer.discountPercent / 100))
+      : null;
 
   return (
     <motion.div
@@ -112,7 +554,7 @@ function MenuItemCard({
             style={{ background: FALLBACK_GRADIENT }}
           />
         )}
-        {/* Dark overlay for text legibility */}
+        {/* Dark overlay */}
         <div
           className="absolute inset-0"
           style={{
@@ -120,7 +562,7 @@ function MenuItemCard({
               "linear-gradient(180deg, oklch(0.07 0.04 150 / 0.10) 0%, oklch(0.07 0.04 150 / 0.55) 100%)",
           }}
         />
-        {/* Veg dot indicator */}
+        {/* Veg dot */}
         <div
           className="absolute top-2 left-2 w-5 h-5 rounded-sm border-2 flex items-center justify-center"
           style={{
@@ -133,6 +575,19 @@ function MenuItemCard({
             style={{ background: "oklch(0.60 0.22 145)" }}
           />
         </div>
+        {/* Offer badge */}
+        {discounted !== null && (
+          <div
+            className="absolute top-2 right-2 rounded-full px-1.5 py-0.5 text-xs font-display font-bold"
+            style={{
+              background:
+                "linear-gradient(135deg, oklch(0.68 0.14 80), oklch(0.55 0.16 75))",
+              color: "oklch(0.08 0.03 150)",
+            }}
+          >
+            -{offer.discountPercent}%
+          </div>
+        )}
       </div>
 
       {/* Card bottom info */}
@@ -143,7 +598,7 @@ function MenuItemCard({
             "linear-gradient(180deg, oklch(0.13 0.05 150) 0%, oklch(0.10 0.04 150) 100%)",
         }}
       >
-        {/* Top gold accent line */}
+        {/* Top gold accent */}
         <div
           className="absolute top-0 left-0 right-0 h-px"
           style={{
@@ -157,26 +612,48 @@ function MenuItemCard({
           style={{ color: "oklch(0.96 0.015 70)" }}
         >
           {item.name}
-          {item.note && (
+          {(item as { note?: string }).note && (
             <span
               className="block font-body font-normal text-xs italic mt-0.5"
               style={{ color: "oklch(0.60 0.08 150)" }}
             >
-              {item.note}
+              {(item as { note?: string }).note}
             </span>
           )}
         </p>
 
         <div className="flex items-center justify-between mt-auto">
-          <span
-            className="font-display font-bold text-sm tracking-wide"
-            style={{
-              color: "oklch(0.75 0.15 80)",
-              textShadow: "0 0 12px oklch(0.75 0.15 80 / 0.4)",
-            }}
-          >
-            ₹{Number(item.price)}/-
-          </span>
+          <div className="flex flex-col">
+            {discounted !== null ? (
+              <>
+                <span
+                  className="font-body text-xs line-through"
+                  style={{ color: "oklch(0.50 0.06 140)" }}
+                >
+                  ₹{originalPrice}/-
+                </span>
+                <span
+                  className="font-display font-bold text-sm tracking-wide"
+                  style={{
+                    color: "oklch(0.75 0.15 80)",
+                    textShadow: "0 0 12px oklch(0.75 0.15 80 / 0.4)",
+                  }}
+                >
+                  ₹{discounted}/-
+                </span>
+              </>
+            ) : (
+              <span
+                className="font-display font-bold text-sm tracking-wide"
+                style={{
+                  color: "oklch(0.75 0.15 80)",
+                  textShadow: "0 0 12px oklch(0.75 0.15 80 / 0.4)",
+                }}
+              >
+                ₹{originalPrice}/-
+              </span>
+            )}
+          </div>
 
           <button
             type="button"
@@ -207,10 +684,12 @@ function CategorySection({
   category,
   sectionIndex,
   onAdd,
+  offer,
 }: {
   category: Category;
   sectionIndex: number;
   onAdd: (item: MenuItem) => void;
+  offer: OfferState;
 }) {
   const icon = CATEGORY_ICONS[category.name] || "🍽️";
   return (
@@ -226,7 +705,7 @@ function CategorySection({
       }}
       className="menu-card-bg rounded-xl overflow-hidden mb-5"
     >
-      {/* Category header stripe */}
+      {/* Category header */}
       <div className="category-stripe px-5 py-3.5 flex items-center gap-3">
         <span className="text-2xl" role="img" aria-label={category.name}>
           {icon}
@@ -248,10 +727,16 @@ function CategorySection({
         </div>
       </div>
 
-      {/* Square grid of dish cards */}
+      {/* Square grid */}
       <div className="p-3 grid grid-cols-2 gap-3">
         {category.items.map((item, idx) => (
-          <MenuItemCard key={item.name} item={item} index={idx} onAdd={onAdd} />
+          <MenuItemCard
+            key={item.name}
+            item={item}
+            index={idx}
+            onAdd={onAdd}
+            offer={offer}
+          />
         ))}
       </div>
     </motion.div>
@@ -362,6 +847,7 @@ function OrderSheet({
   onIncrease,
   onDecrease,
   onRemove,
+  offer,
 }: {
   open: boolean;
   onClose: () => void;
@@ -369,6 +855,7 @@ function OrderSheet({
   onIncrease: (name: string) => void;
   onDecrease: (name: string) => void;
   onRemove: (name: string) => void;
+  offer: OfferState;
 }) {
   const [naam, setNaam] = useState("");
   const [phone, setPhone] = useState("");
@@ -376,10 +863,15 @@ function OrderSheet({
   const [payment, setPayment] = useState("Cash on Delivery");
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const grandTotal = cart.reduce(
+  const originalTotal = cart.reduce(
     (sum, item) => sum + item.price * item.quantity,
     0,
   );
+  const discountAmount =
+    offer.active && offer.discountPercent > 0
+      ? Math.round(originalTotal * (offer.discountPercent / 100))
+      : 0;
+  const grandTotal = originalTotal - discountAmount;
 
   const validate = () => {
     const errs: Record<string, string> = {};
@@ -401,7 +893,12 @@ function OrderSheet({
       )
       .join("\n");
 
-    const message = `🛒 New Order - The Hot Chilly Yammy\n\nItems:\n${itemLines}\nTotal: ₹${grandTotal}\n\nCustomer:\nName: ${naam}\nPhone: ${phone}\nAddress: ${address}\nPayment: ${payment}`;
+    const discountLine =
+      discountAmount > 0
+        ? `\nDiscount Applied: ${offer.discountPercent}%\nDiscount Amount: ₹${discountAmount}\nOriginal Total: ₹${originalTotal}\nFinal Total: ₹${grandTotal}`
+        : `\nTotal: ₹${grandTotal}`;
+
+    const message = `🛒 New Order - The Hot Chilly Yammy\n\nItems:\n${itemLines}${discountLine}\n\nCustomer:\nName: ${naam}\nPhone: ${phone}\nAddress: ${address}\nPayment: ${payment}`;
 
     const encoded = encodeURIComponent(message);
     window.open(`https://wa.me/918582024063?text=${encoded}`, "_blank");
@@ -442,7 +939,6 @@ function OrderSheet({
 
         <ScrollArea className="flex-1 overflow-y-auto">
           <div className="px-5 py-4 space-y-5">
-            {/* Cart Items */}
             {cart.length === 0 ? (
               <p
                 data-ocid="order.empty_state"
@@ -452,141 +948,163 @@ function OrderSheet({
                 Cart khali hai. Menu se items add karein.
               </p>
             ) : (
-              <div className="space-y-2">
-                {cart.map((item, idx) => (
-                  <div
-                    key={item.name}
-                    data-ocid={`order.item.${idx + 1}`}
-                    className="flex items-center gap-3 rounded-xl px-3 py-2.5"
-                    style={{
-                      background: "oklch(0.16 0.06 150 / 0.6)",
-                      border: "1px solid oklch(0.55 0.20 150 / 0.18)",
-                    }}
-                  >
-                    <div className="flex-1 min-w-0">
-                      <p className="font-body font-semibold text-base text-foreground truncate">
-                        {item.name}
-                      </p>
-                      <p
-                        className="text-sm font-display"
-                        style={{ color: "oklch(0.75 0.15 80)" }}
-                      >
-                        ₹{item.price} each
-                      </p>
+              <>
+                <div className="space-y-2">
+                  {cart.map((item, idx) => (
+                    <div
+                      key={item.name}
+                      data-ocid={`order.item.${idx + 1}`}
+                      className="flex items-center gap-3 rounded-xl px-3 py-2.5"
+                      style={{
+                        background: "oklch(0.16 0.06 150 / 0.6)",
+                        border: "1px solid oklch(0.55 0.20 150 / 0.18)",
+                      }}
+                    >
+                      <div className="flex-1 min-w-0">
+                        <p className="font-body font-semibold text-base text-foreground truncate">
+                          {item.name}
+                        </p>
+                        <p
+                          className="text-sm font-display"
+                          style={{ color: "oklch(0.75 0.15 80)" }}
+                        >
+                          ₹{item.price} each
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <button
+                          type="button"
+                          data-ocid={`order.item.delete_button.${idx + 1}`}
+                          onClick={() => onDecrease(item.name)}
+                          className="w-6 h-6 rounded-full flex items-center justify-center transition-colors"
+                          style={{
+                            background: "oklch(0.16 0.05 150)",
+                            border: "1px solid oklch(0.28 0.10 150)",
+                          }}
+                          aria-label={`Decrease ${item.name}`}
+                        >
+                          <Minus
+                            className="w-3 h-3 text-foreground"
+                            strokeWidth={3}
+                          />
+                        </button>
+                        <span className="font-display font-bold text-sm text-foreground w-5 text-center">
+                          {item.quantity}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => onIncrease(item.name)}
+                          className="w-6 h-6 rounded-full flex items-center justify-center transition-colors"
+                          style={{
+                            background:
+                              "linear-gradient(135deg, oklch(0.48 0.20 150), oklch(0.35 0.14 150))",
+                            border: "1px solid oklch(0.55 0.20 150 / 0.35)",
+                          }}
+                          aria-label={`Increase ${item.name}`}
+                        >
+                          <Plus
+                            className="w-3 h-3"
+                            style={{ color: "oklch(0.97 0.01 70)" }}
+                            strokeWidth={3}
+                          />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => onRemove(item.name)}
+                          className="w-6 h-6 rounded-full flex items-center justify-center transition-colors ml-1"
+                          style={{
+                            background: "oklch(0.16 0.08 25 / 0.5)",
+                            border: "1px solid oklch(0.50 0.22 25 / 0.4)",
+                          }}
+                          aria-label={`Remove ${item.name}`}
+                        >
+                          <Trash2
+                            className="w-3 h-3"
+                            style={{ color: "oklch(0.65 0.22 25)" }}
+                            strokeWidth={2.5}
+                          />
+                        </button>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2 flex-shrink-0">
-                      <button
-                        type="button"
-                        data-ocid={`order.item.delete_button.${idx + 1}`}
-                        onClick={() => onDecrease(item.name)}
-                        className="w-6 h-6 rounded-full flex items-center justify-center transition-colors"
-                        style={{
-                          background: "oklch(0.16 0.05 150)",
-                          border: "1px solid oklch(0.28 0.10 150)",
-                        }}
-                        aria-label={`Decrease ${item.name}`}
-                      >
-                        <Minus
-                          className="w-3 h-3 text-foreground"
-                          strokeWidth={3}
-                        />
-                      </button>
-                      <span className="font-display font-bold text-sm text-foreground w-5 text-center">
-                        {item.quantity}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => onIncrease(item.name)}
-                        className="w-6 h-6 rounded-full flex items-center justify-center transition-colors"
-                        style={{
-                          background:
-                            "linear-gradient(135deg, oklch(0.48 0.20 150), oklch(0.35 0.14 150))",
-                          border: "1px solid oklch(0.55 0.20 150 / 0.35)",
-                        }}
-                        aria-label={`Increase ${item.name}`}
-                      >
-                        <Plus
-                          className="w-3 h-3"
-                          style={{ color: "oklch(0.97 0.01 70)" }}
-                          strokeWidth={3}
-                        />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => onRemove(item.name)}
-                        className="w-6 h-6 rounded-full flex items-center justify-center transition-colors ml-1"
-                        style={{
-                          background: "oklch(0.16 0.08 25 / 0.5)",
-                          border: "1px solid oklch(0.50 0.22 25 / 0.4)",
-                        }}
-                        aria-label={`Remove ${item.name}`}
-                      >
-                        <Trash2 className="w-3 h-3 text-destructive" />
-                      </button>
-                    </div>
-                    <div className="flex-shrink-0 w-16 text-right">
-                      <span
-                        className="font-display font-bold text-sm"
-                        style={{ color: "oklch(0.75 0.15 80)" }}
-                      >
-                        ₹{item.price * item.quantity}
-                      </span>
-                    </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
 
+                {/* Order total */}
                 <div
-                  className="flex justify-between items-center px-4 py-3 rounded-xl"
+                  className="rounded-xl px-4 py-3 space-y-1.5"
                   style={{
-                    background:
-                      "linear-gradient(135deg, oklch(0.18 0.08 150 / 0.35), oklch(0.13 0.05 150 / 0.4))",
-                    border: "1px solid oklch(0.75 0.15 80 / 0.35)",
-                    boxShadow: "inset 0 1px 0 oklch(0.75 0.15 80 / 0.10)",
+                    background: "oklch(0.16 0.06 150 / 0.5)",
+                    border: "1px solid oklch(0.55 0.20 150 / 0.18)",
                   }}
                 >
-                  <span className="font-display font-bold text-base text-foreground">
-                    Total
-                  </span>
-                  <span
-                    className="font-display font-black text-xl text-shadow-gold"
-                    style={{ color: "oklch(0.75 0.15 80)" }}
-                  >
-                    ₹{grandTotal}
-                  </span>
+                  {discountAmount > 0 ? (
+                    <>
+                      <div className="flex justify-between text-sm font-body">
+                        <span style={{ color: "oklch(0.65 0.07 140)" }}>
+                          Original Total
+                        </span>
+                        <span style={{ color: "oklch(0.65 0.07 140)" }}>
+                          ₹{originalTotal}
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-sm font-body">
+                        <span style={{ color: "oklch(0.75 0.15 80)" }}>
+                          Discount ({offer.discountPercent}%)
+                        </span>
+                        <span style={{ color: "oklch(0.75 0.15 80)" }}>
+                          - ₹{discountAmount}
+                        </span>
+                      </div>
+                      <Separator
+                        style={{ background: "oklch(0.55 0.20 150 / 0.2)" }}
+                      />
+                      <div className="flex justify-between font-display font-bold text-base">
+                        <span style={{ color: "oklch(0.96 0.015 70)" }}>
+                          Final Total
+                        </span>
+                        <span style={{ color: "oklch(0.75 0.15 80)" }}>
+                          ₹{grandTotal}
+                        </span>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="flex justify-between font-display font-bold text-base">
+                      <span style={{ color: "oklch(0.96 0.015 70)" }}>
+                        Total
+                      </span>
+                      <span style={{ color: "oklch(0.75 0.15 80)" }}>
+                        ₹{grandTotal}
+                      </span>
+                    </div>
+                  )}
                 </div>
-              </div>
-            )}
 
-            {cart.length > 0 && (
-              <>
-                <div
-                  className="ornamental-divider text-xs font-display tracking-[0.3em]"
-                  style={{ color: "oklch(0.75 0.15 80 / 0.4)" }}
-                >
-                  ✦ ✦ ✦
-                </div>
+                <Separator
+                  style={{ background: "oklch(0.55 0.20 150 / 0.2)" }}
+                />
 
-                {/* Order Form */}
-                <div className="space-y-4">
-                  <h3
-                    className="font-display font-bold text-base uppercase tracking-wider"
-                    style={{ color: "oklch(0.75 0.15 80)" }}
+                {/* Customer details */}
+                <div className="space-y-3">
+                  <p
+                    className="font-display font-bold text-base"
+                    style={{ color: "oklch(0.96 0.015 70)" }}
                   >
                     Delivery Details
-                  </h3>
+                  </p>
 
-                  {/* Naam */}
+                  {/* Name */}
                   <div className="space-y-1.5">
                     <Label
                       htmlFor="order-naam"
                       className="font-body font-semibold text-sm text-foreground/80"
                     >
-                      Naam (Name) *
+                      Naam *
                     </Label>
                     <Input
                       id="order-naam"
                       data-ocid="order.name_input"
-                      placeholder="Apna naam daalein"
+                      type="text"
+                      placeholder="Aapka naam"
                       value={naam}
                       onChange={(e) => setNaam(e.target.value)}
                       className="font-body text-foreground placeholder:text-muted-foreground/60"
@@ -763,10 +1281,41 @@ function OrderSheet({
   );
 }
 
+// ---------- Main App ----------
 export default function App() {
   const { data: menu, isLoading, isError } = useGetMenu();
   const [cart, setCart] = useState<CartItem[]>([]);
   const [orderOpen, setOrderOpen] = useState(false);
+  const [offer, setOffer] = useState<OfferState>(getOffer);
+  const [hash, setHash] = useState(() =>
+    typeof window !== "undefined" ? window.location.hash : "",
+  );
+
+  // Hash routing
+  useEffect(() => {
+    const onHashChange = () => setHash(window.location.hash);
+    window.addEventListener("hashchange", onHashChange);
+    return () => window.removeEventListener("hashchange", onHashChange);
+  }, []);
+
+  // Reload offer when returning to menu (so discount updates live)
+  useEffect(() => {
+    if (hash === "" || hash === "#") {
+      setOffer(getOffer());
+    }
+  }, [hash]);
+
+  const navigate = (newHash: string) => {
+    window.location.hash = newHash;
+  };
+
+  // Render sub-pages based on hash
+  if (hash === "#admin") {
+    return <AdminPage onBack={() => navigate("")} />;
+  }
+  if (hash === "#qr") {
+    return <QrPage onBack={() => navigate("")} />;
+  }
 
   const totalItems = cart.reduce((sum, i) => sum + i.quantity, 0);
 
@@ -832,7 +1381,6 @@ export default function App() {
               "linear-gradient(180deg, oklch(0.08 0.04 150) 0%, oklch(0.10 0.04 150) 100%)",
           }}
         >
-          {/* Top decorative line */}
           <div
             className="absolute top-0 left-0 right-0 h-px"
             style={{
@@ -841,57 +1389,38 @@ export default function App() {
             }}
           />
 
-          {/* Veg badge */}
           <div className="flex justify-center mb-4">
             <Badge
               className="border-0 font-body font-semibold uppercase tracking-widest text-xs px-4 py-1.5 gap-1.5"
               style={{
-                background: "oklch(0.35 0.18 150 / 0.9)",
-                color: "oklch(0.96 0.015 70)",
+                background: "oklch(0.55 0.20 150 / 0.15)",
+                border: "1px solid oklch(0.55 0.20 150 / 0.35)",
+                color: "oklch(0.75 0.22 150)",
               }}
             >
-              <Leaf className="w-3.5 h-3.5" />
-              Only Veg Food
+              <Leaf className="w-3 h-3" />
+              100% Veg · Chinese
             </Badge>
           </div>
 
-          {/* Main restaurant title */}
-          <div className="mb-3 relative">
-            {/* Decorative corner marks */}
-            <div
-              className="absolute left-4 top-1/2 -translate-y-1/2 text-2xl font-display select-none"
-              style={{ color: "oklch(0.75 0.15 80 / 0.25)" }}
-            >
-              ❰
-            </div>
-            <div
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-2xl font-display select-none"
-              style={{ color: "oklch(0.75 0.15 80 / 0.25)" }}
-            >
-              ❱
-            </div>
+          <h1
+            className="font-display font-black text-3xl sm:text-4xl tracking-tight leading-tight mb-1"
+            style={{
+              color: "oklch(0.96 0.015 70)",
+              textShadow:
+                "0 2px 12px oklch(0.04 0.02 150 / 0.8), 0 0 30px oklch(0.55 0.20 150 / 0.3)",
+            }}
+          >
+            The Hot Chilly Yammy
+          </h1>
 
-            <h1 className="font-display font-bold leading-none tracking-[0.12em] text-shadow-gold">
-              <span
-                className="block text-4xl sm:text-5xl"
-                style={{ color: "oklch(0.90 0.06 70)" }}
-              >
-                The Hot
-              </span>
-              <span
-                className="block text-5xl sm:text-6xl mt-0.5"
-                style={{
-                  color: "oklch(0.60 0.22 145)",
-                  textShadow:
-                    "0 0 40px oklch(0.55 0.20 150 / 0.55), 0 2px 4px oklch(0.04 0.02 150 / 0.8)",
-                }}
-              >
-                Chilly Yammy
-              </span>
-            </h1>
-          </div>
+          <p
+            className="font-display text-sm tracking-[0.35em] uppercase mb-4"
+            style={{ color: "oklch(0.75 0.15 80 / 0.9)" }}
+          >
+            ✦ Premium Chinese Vegetarian ✦
+          </p>
 
-          {/* Ornamental separator */}
           <div className="flex items-center justify-center gap-3 mb-3">
             <div
               className="h-px flex-1 max-w-20"
@@ -924,9 +1453,11 @@ export default function App() {
         </motion.div>
       </header>
 
+      {/* Offer Banner */}
+      <OfferBanner offer={offer} />
+
       {/* Menu Content */}
       <main className="max-w-lg mx-auto px-4 py-6 pb-28">
-        {/* Section heading */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -991,6 +1522,7 @@ export default function App() {
                     category={category}
                     sectionIndex={idx}
                     onAdd={handleAdd}
+                    offer={offer}
                   />
                 ))
               )}
@@ -1008,7 +1540,6 @@ export default function App() {
           borderTop: "1px solid oklch(0.55 0.20 150 / 0.2)",
         }}
       >
-        {/* Top ornament */}
         <div className="flex items-center justify-center gap-3 mb-5">
           <div
             className="h-px flex-1 max-w-20"
@@ -1069,6 +1600,24 @@ export default function App() {
           </a>
         </div>
 
+        {/* QR Code button */}
+        <div className="flex items-center justify-center gap-4 mb-5">
+          <button
+            type="button"
+            data-ocid="menu.qr_button"
+            onClick={() => navigate("#qr")}
+            className="flex items-center gap-2 rounded-full px-5 py-2 font-display font-semibold tracking-wide transition-all text-sm hover:scale-105"
+            style={{
+              background:
+                "linear-gradient(135deg, oklch(0.68 0.14 80 / 0.15), oklch(0.55 0.16 75 / 0.10))",
+              border: "1px solid oklch(0.68 0.14 80 / 0.40)",
+              color: "oklch(0.80 0.15 80)",
+            }}
+          >
+            <QrCode className="w-4 h-4" />📱 QR Code
+          </button>
+        </div>
+
         <div
           className="pt-4"
           style={{ borderTop: "1px solid oklch(0.55 0.20 150 / 0.12)" }}
@@ -1088,10 +1637,19 @@ export default function App() {
               caffeine.ai
             </a>
           </p>
+          {/* Hidden admin link */}
+          <a
+            href="#admin"
+            data-ocid="menu.admin_link"
+            className="mt-2 inline-block text-xs font-body opacity-20 hover:opacity-60 transition-opacity"
+            style={{ color: "oklch(0.55 0.08 140)" }}
+          >
+            Admin
+          </a>
         </div>
       </footer>
 
-      {/* Floating Cart Button — emerald green */}
+      {/* Floating Cart Button */}
       <AnimatePresence>
         {totalItems > 0 && (
           <motion.button
@@ -1133,6 +1691,7 @@ export default function App() {
         onIncrease={handleIncrease}
         onDecrease={handleDecrease}
         onRemove={handleRemove}
+        offer={offer}
       />
     </div>
   );

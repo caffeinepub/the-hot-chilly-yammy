@@ -49,6 +49,13 @@ actor {
       ];
     },
     {
+      name = "Rice";
+      items = [
+        { name = "Veg Fry Rice"; price = 70; note = null },
+        { name = "Paneer Fry Rice"; price = 90; note = null },
+      ];
+    },
+    {
       name = "Manchurian";
       items = [
         { name = "Veg Manchurian"; price = 69; note = null },
