@@ -37,18 +37,30 @@ const CATEGORY_ICONS: Record<string, string> = {
 };
 
 const DISH_IMAGES: Record<string, string> = {
-  "Spring Roll": "/assets/generated/spring-roll.dim_400x400.jpg",
-  "Steamed Momos": "/assets/generated/steamed-momos.dim_400x400.jpg",
-  "Fried Momos": "/assets/generated/fried-momos.dim_400x400.jpg",
-  "Chilli Momos": "/assets/generated/chilli-momos.dim_400x400.jpg",
-  "Tandoori Momos": "/assets/generated/tandoori-momos.dim_400x400.jpg",
-  "Paneer Momos": "/assets/generated/paneer-momos.dim_400x400.jpg",
+  // Spring Roll
+  "Veg Roll": "/assets/generated/veg-roll.dim_400x400.jpg",
+  "Veg Spring Roll": "/assets/generated/veg-spring-roll.dim_400x400.jpg",
+  "Paneer Roll": "/assets/generated/paneer-roll.dim_400x400.jpg",
+  "Cheese Roll": "/assets/generated/cheese-roll.dim_400x400.jpg",
+  // Momos
+  "Veg Momo": "/assets/generated/veg-momo.dim_400x400.jpg",
+  "Veg Chilli Momo": "/assets/generated/veg-chilli-momo.dim_400x400.jpg",
+  "Paneer Momo Fry": "/assets/generated/paneer-momo-fry.dim_400x400.jpg",
+  "Saucy Momos": "/assets/generated/saucy-momos.dim_400x400.jpg",
+  // Noodles
   "Veg Noodles": "/assets/generated/veg-noodles.dim_400x400.jpg",
-  "Schezwan Noodles": "/assets/generated/schezwan-noodles.dim_400x400.jpg",
+  "Veg Schezwan Noodles":
+    "/assets/generated/veg-schezwan-noodles.dim_400x400.jpg",
   "Hakka Noodles": "/assets/generated/hakka-noodles.dim_400x400.jpg",
+  "Paneer Noodles": "/assets/generated/paneer-noodles.dim_400x400.jpg",
+  // Manchurian
   "Veg Manchurian": "/assets/generated/veg-manchurian.dim_400x400.jpg",
-  "Gobi Manchurian": "/assets/generated/gobi-manchurian.dim_400x400.jpg",
-  "Paneer Manchurian": "/assets/generated/paneer-manchurian.dim_400x400.jpg",
+  "Veg Soya Chilli": "/assets/uploads/images-2.jpeg",
+  "Mushroom Chilli": "/assets/generated/mushroom-chilli.dim_400x400.jpg",
+  "Paneer Chilli": "/assets/uploads/chilli-paneer-recipe-1-1.jpg",
+  "Mushroom 65": "/assets/generated/mushroom-65.dim_400x400.jpg",
+  "Paneer 65": "/assets/generated/paneer-65.dim_400x400.jpg",
+  // Soup
   "Hot & Sour Soup": "/assets/generated/hot-sour-soup.dim_400x400.jpg",
 };
 
