@@ -16,8 +16,8 @@ export default {
     },
     extend: {
       fontFamily: {
-        display: ['Bricolage Grotesque', 'sans-serif'],
-        body: ['Cabinet Grotesk', 'sans-serif'],
+        display: ['Playfair Display', 'serif'],
+        body: ['Crimson Pro', 'serif'],
       },
       colors: {
         border: "oklch(var(--border))",
@@ -78,8 +78,9 @@ export default {
       },
       boxShadow: {
         xs: "0 1px 2px 0 rgba(0,0,0,0.05)",
-        glow: "0 0 20px oklch(0.72 0.19 55 / 0.3)",
-        "glow-lg": "0 0 40px oklch(0.72 0.19 55 / 0.2)",
+        glow: "0 0 20px oklch(0.78 0.14 72 / 0.35), 0 2px 8px oklch(0.05 0.02 18 / 0.5)",
+        "glow-lg": "0 0 40px oklch(0.78 0.14 72 / 0.25), 0 8px 32px oklch(0.05 0.02 18 / 0.6)",
+        "card": "0 4px 24px oklch(0.05 0.02 18 / 0.6), inset 0 1px 0 oklch(0.78 0.14 72 / 0.08)",
       },
       keyframes: {
         "accordion-down": {
@@ -98,12 +99,17 @@ export default {
           "0%": { backgroundPosition: "-200% 0" },
           "100%": { backgroundPosition: "200% 0" },
         },
+        "gold-pulse": {
+          "0%, 100%": { opacity: "1" },
+          "50%": { opacity: "0.7" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
         "fade-up": "fade-up 0.5s ease-out forwards",
         shimmer: "shimmer 2s infinite linear",
+        "gold-pulse": "gold-pulse 3s ease-in-out infinite",
       },
     },
   },

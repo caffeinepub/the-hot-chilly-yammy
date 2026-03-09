@@ -1,16 +1,15 @@
 @font-face {
-  font-family: "Bricolage Grotesque";
-  src: url("/assets/fonts/BricolageGrotesque[opsz,wdth,wght].woff2")
-    format("woff2");
-  font-weight: 100 900;
+  font-family: "Playfair Display";
+  src: url("/assets/fonts/PlayfairDisplay[wght].woff2") format("woff2");
+  font-weight: 400 900;
   font-style: normal;
   font-display: swap;
 }
 
 @font-face {
-  font-family: "Cabinet Grotesk";
-  src: url("/assets/fonts/CabinetGrotesk[wght].woff2") format("woff2");
-  font-weight: 100 900;
+  font-family: "Crimson Pro";
+  src: url("/assets/fonts/CrimsonPro[wght].woff2") format("woff2");
+  font-weight: 300 900;
   font-style: normal;
   font-display: swap;
 }
@@ -21,54 +20,54 @@
 
 @layer base {
   :root {
-    /* Deep Forest Green base — street food energy */
-    --background: 0.22 0.06 145;
-    --foreground: 0.97 0.015 85;
+    /* Deep burgundy/crimson — premium Chinese restaurant */
+    --background: 0.13 0.055 18;
+    --foreground: 0.96 0.02 75;
 
-    --card: 0.27 0.065 145;
-    --card-foreground: 0.97 0.015 85;
+    --card: 0.19 0.065 20;
+    --card-foreground: 0.96 0.02 75;
 
-    --popover: 0.27 0.065 145;
-    --popover-foreground: 0.97 0.015 85;
+    --popover: 0.19 0.065 20;
+    --popover-foreground: 0.96 0.02 75;
 
-    /* Vivid orange — primary action color */
-    --primary: 0.72 0.19 55;
-    --primary-foreground: 0.15 0.04 145;
+    /* Rich gold — primary action */
+    --primary: 0.78 0.14 72;
+    --primary-foreground: 0.12 0.04 20;
 
-    /* Lighter green for secondary surfaces */
-    --secondary: 0.32 0.07 148;
-    --secondary-foreground: 0.97 0.015 85;
+    /* Warm dark red secondary surfaces */
+    --secondary: 0.22 0.075 18;
+    --secondary-foreground: 0.96 0.02 75;
 
-    --muted: 0.3 0.055 145;
-    --muted-foreground: 0.72 0.04 145;
+    --muted: 0.2 0.06 20;
+    --muted-foreground: 0.62 0.055 45;
 
-    /* Bright amber accent */
-    --accent: 0.82 0.18 80;
-    --accent-foreground: 0.15 0.04 145;
+    /* Bright warm amber accent */
+    --accent: 0.86 0.17 68;
+    --accent-foreground: 0.12 0.04 20;
 
-    --destructive: 0.58 0.22 27;
+    --destructive: 0.55 0.22 27;
     --destructive-foreground: 0.97 0.015 85;
 
-    --border: 0.35 0.07 148;
-    --input: 0.35 0.07 148;
-    --ring: 0.72 0.19 55;
+    --border: 0.3 0.07 22;
+    --input: 0.3 0.07 22;
+    --ring: 0.78 0.14 72;
 
     --radius: 0.5rem;
 
-    --chart-1: 0.72 0.19 55;
-    --chart-2: 0.82 0.18 80;
-    --chart-3: 0.55 0.18 150;
-    --chart-4: 0.65 0.15 190;
-    --chart-5: 0.75 0.12 240;
+    --chart-1: 0.78 0.14 72;
+    --chart-2: 0.86 0.17 68;
+    --chart-3: 0.55 0.18 27;
+    --chart-4: 0.65 0.12 40;
+    --chart-5: 0.72 0.1 60;
 
-    --sidebar: 0.2 0.06 145;
-    --sidebar-foreground: 0.97 0.015 85;
-    --sidebar-primary: 0.72 0.19 55;
-    --sidebar-primary-foreground: 0.15 0.04 145;
-    --sidebar-accent: 0.28 0.07 148;
-    --sidebar-accent-foreground: 0.97 0.015 85;
-    --sidebar-border: 0.35 0.07 148;
-    --sidebar-ring: 0.72 0.19 55;
+    --sidebar: 0.15 0.06 18;
+    --sidebar-foreground: 0.96 0.02 75;
+    --sidebar-primary: 0.78 0.14 72;
+    --sidebar-primary-foreground: 0.12 0.04 20;
+    --sidebar-accent: 0.22 0.075 18;
+    --sidebar-accent-foreground: 0.96 0.02 75;
+    --sidebar-border: 0.3 0.07 22;
+    --sidebar-ring: 0.78 0.14 72;
   }
 }
 
@@ -78,41 +77,99 @@
   }
   body {
     @apply bg-background text-foreground;
-    font-family: "Cabinet Grotesk", sans-serif;
+    font-family: "Crimson Pro", serif;
+    background-image: radial-gradient(
+        ellipse 80% 40% at 50% 0%,
+        oklch(0.22 0.09 18 / 0.7) 0%,
+        transparent 70%
+      ),
+      radial-gradient(
+        ellipse 60% 30% at 50% 100%,
+        oklch(0.1 0.04 18 / 0.8) 0%,
+        transparent 60%
+      );
   }
 }
 
 @layer utilities {
-  .text-shadow-glow {
-    text-shadow: 0 0 20px oklch(0.72 0.19 55 / 0.5), 0 0 40px
-      oklch(0.72 0.19 55 / 0.2);
+  .text-shadow-gold {
+    text-shadow: 0 0 30px oklch(0.78 0.14 72 / 0.6), 0 0 60px
+      oklch(0.78 0.14 72 / 0.25), 0 2px 4px oklch(0.05 0.02 18 / 0.8);
   }
 
-  .border-dashed-orange {
-    border: 2px dashed oklch(0.72 0.19 55 / 0.6);
+  .text-shadow-glow {
+    text-shadow: 0 0 24px oklch(0.78 0.14 72 / 0.55), 0 0 48px
+      oklch(0.78 0.14 72 / 0.2);
   }
 
   .category-stripe {
     background: linear-gradient(
+      105deg,
+      oklch(0.2 0.09 18) 0%,
+      oklch(0.26 0.1 22) 40%,
+      oklch(0.32 0.11 35) 70%,
+      oklch(0.36 0.1 55) 100%
+    );
+    border-bottom: 1px solid oklch(0.78 0.14 72 / 0.4);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .category-stripe::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
       90deg,
-      oklch(0.72 0.19 55) 0%,
-      oklch(0.78 0.2 65) 100%
+      transparent 0%,
+      oklch(0.78 0.14 72 / 0.06) 50%,
+      transparent 100%
     );
   }
 
   .menu-card-bg {
     background: linear-gradient(
-      135deg,
-      oklch(0.27 0.07 148) 0%,
-      oklch(0.24 0.065 145) 100%
+      160deg,
+      oklch(0.21 0.075 20) 0%,
+      oklch(0.17 0.06 18) 100%
     );
+    border: 1px solid oklch(0.32 0.08 25 / 0.6);
+    box-shadow: 0 4px 24px oklch(0.05 0.02 18 / 0.6), inset 0 1px 0
+      oklch(0.78 0.14 72 / 0.08);
   }
 
   .hero-gradient {
     background: linear-gradient(
       180deg,
-      oklch(0.16 0.055 145 / 0.0) 0%,
-      oklch(0.22 0.06 145) 100%
+      oklch(0.1 0.04 18 / 0.15) 0%,
+      oklch(0.13 0.055 18 / 0.85) 70%,
+      oklch(0.13 0.055 18) 100%
+    );
+  }
+
+  .gold-border {
+    border: 1px solid oklch(0.78 0.14 72 / 0.35);
+    box-shadow: 0 0 0 1px oklch(0.78 0.14 72 / 0.1), inset 0 1px 0
+      oklch(0.78 0.14 72 / 0.15);
+  }
+
+  .ornamental-divider {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: oklch(0.78 0.14 72 / 0.5);
+  }
+
+  .ornamental-divider::before,
+  .ornamental-divider::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      oklch(0.78 0.14 72 / 0.4),
+      transparent
     );
   }
 }
