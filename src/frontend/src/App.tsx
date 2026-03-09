@@ -26,7 +26,6 @@ import {
   Trash2,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import { QRCodeCanvas } from "qrcode.react";
 import { useEffect, useRef, useState } from "react";
 import type { Category, MenuItem } from "./backend";
 import { useGetMenu } from "./hooks/useQueries";
@@ -72,7 +71,7 @@ const DISH_IMAGES: Record<string, string> = {
 };
 
 const FALLBACK_GRADIENT =
-  "linear-gradient(135deg, oklch(0.20 0.10 150) 0%, oklch(0.30 0.16 145) 100%)";
+  "linear-gradient(135deg, oklch(0.20 0.09 105) 0%, oklch(0.30 0.14 105) 100%)";
 
 type CartItem = { name: string; price: number; quantity: number };
 type OfferState = { discountPercent: number; active: boolean };
@@ -121,7 +120,7 @@ function AdminPage({ onBack }: { onBack: () => void }) {
       className="min-h-screen font-body flex flex-col items-center justify-center px-4 py-12"
       style={{
         background:
-          "linear-gradient(160deg, oklch(0.08 0.04 150), oklch(0.05 0.02 150))",
+          "linear-gradient(160deg, oklch(0.08 0.035 105), oklch(0.05 0.018 105))",
       }}
     >
       {/* Back button */}
@@ -147,8 +146,8 @@ function AdminPage({ onBack }: { onBack: () => void }) {
             className="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-4"
             style={{
               background:
-                "linear-gradient(135deg, oklch(0.48 0.20 150), oklch(0.35 0.14 150))",
-              boxShadow: "0 8px 24px oklch(0.48 0.20 150 / 0.4)",
+                "linear-gradient(135deg, oklch(0.48 0.17 105), oklch(0.35 0.12 105))",
+              boxShadow: "0 8px 24px oklch(0.48 0.17 105 / 0.4)",
             }}
           >
             <span className="text-2xl">🔐</span>
@@ -171,9 +170,9 @@ function AdminPage({ onBack }: { onBack: () => void }) {
           className="rounded-2xl p-6"
           style={{
             background:
-              "linear-gradient(160deg, oklch(0.12 0.05 150), oklch(0.09 0.03 150))",
-            border: "1px solid oklch(0.55 0.20 150 / 0.25)",
-            boxShadow: "0 8px 40px oklch(0.04 0.02 150 / 0.6)",
+              "linear-gradient(160deg, oklch(0.12 0.045 105), oklch(0.09 0.028 105))",
+            border: "1px solid oklch(0.55 0.17 105 / 0.25)",
+            boxShadow: "0 8px 40px oklch(0.04 0.018 105 / 0.6)",
           }}
         >
           {!authed ? (
@@ -197,8 +196,8 @@ function AdminPage({ onBack }: { onBack: () => void }) {
                   onKeyDown={(e) => e.key === "Enter" && handleLogin()}
                   className="font-body"
                   style={{
-                    background: "oklch(0.16 0.06 150 / 0.7)",
-                    border: "1px solid oklch(0.30 0.10 150 / 0.8)",
+                    background: "oklch(0.16 0.055 105 / 0.7)",
+                    border: "1px solid oklch(0.30 0.09 105 / 0.8)",
                     color: "oklch(0.96 0.015 70)",
                   }}
                 />
@@ -219,9 +218,9 @@ function AdminPage({ onBack }: { onBack: () => void }) {
                 className="w-full py-3 rounded-xl font-display font-bold text-sm uppercase tracking-wider transition-all active:scale-[0.98]"
                 style={{
                   background:
-                    "linear-gradient(135deg, oklch(0.50 0.20 150) 0%, oklch(0.38 0.16 150) 100%)",
+                    "linear-gradient(135deg, oklch(0.50 0.17 105) 0%, oklch(0.38 0.14 105) 100%)",
                   color: "oklch(0.97 0.01 70)",
-                  boxShadow: "0 4px 20px oklch(0.50 0.20 150 / 0.40)",
+                  boxShadow: "0 4px 20px oklch(0.50 0.17 105 / 0.40)",
                 }}
               >
                 Login
@@ -233,8 +232,8 @@ function AdminPage({ onBack }: { onBack: () => void }) {
               <div
                 className="rounded-xl px-4 py-3"
                 style={{
-                  background: "oklch(0.16 0.07 150 / 0.5)",
-                  border: "1px solid oklch(0.55 0.20 150 / 0.20)",
+                  background: "oklch(0.16 0.062 105 / 0.5)",
+                  border: "1px solid oklch(0.55 0.17 105 / 0.20)",
                 }}
               >
                 <p
@@ -271,8 +270,8 @@ function AdminPage({ onBack }: { onBack: () => void }) {
                     }
                     className="font-display font-bold text-lg"
                     style={{
-                      background: "oklch(0.16 0.06 150 / 0.7)",
-                      border: "1px solid oklch(0.30 0.10 150 / 0.8)",
+                      background: "oklch(0.16 0.055 105 / 0.7)",
+                      border: "1px solid oklch(0.30 0.09 105 / 0.8)",
                       color: "oklch(0.75 0.15 80)",
                     }}
                   />
@@ -324,9 +323,9 @@ function AdminPage({ onBack }: { onBack: () => void }) {
                 className="w-full py-3 rounded-xl font-display font-bold text-sm uppercase tracking-wider transition-all active:scale-[0.98]"
                 style={{
                   background: saved
-                    ? "linear-gradient(135deg, oklch(0.50 0.18 150), oklch(0.38 0.14 150))"
+                    ? "linear-gradient(135deg, oklch(0.50 0.16 105), oklch(0.38 0.12 105))"
                     : "linear-gradient(135deg, oklch(0.68 0.14 80), oklch(0.55 0.16 75))",
-                  color: "oklch(0.08 0.03 150)",
+                  color: "oklch(0.08 0.028 105)",
                   boxShadow: "0 4px 20px oklch(0.68 0.14 80 / 0.35)",
                 }}
               >
@@ -342,20 +341,17 @@ function AdminPage({ onBack }: { onBack: () => void }) {
 
 // ---------- QR Code Page ----------
 function QrPage({ onBack }: { onBack: () => void }) {
-  const qrRef = useRef<HTMLCanvasElement>(null);
   const appUrl =
     typeof window !== "undefined"
       ? window.location.origin + window.location.pathname
-      : "https://thehot chillyyammy.app";
+      : "https://thehotchillyyammy.app";
+  const qrImgUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(appUrl)}&color=1a2e0e&bgcolor=f7f0e8`;
 
   const handleDownload = () => {
-    const canvas = document.querySelector(
-      "#qr-canvas canvas",
-    ) as HTMLCanvasElement | null;
-    if (!canvas) return;
     const link = document.createElement("a");
     link.download = "HotChillyYammy-QR.png";
-    link.href = canvas.toDataURL("image/png");
+    link.href = qrImgUrl;
+    link.target = "_blank";
     link.click();
   };
 
@@ -365,7 +361,7 @@ function QrPage({ onBack }: { onBack: () => void }) {
       className="min-h-screen font-body flex flex-col items-center justify-center px-4 py-16"
       style={{
         background:
-          "linear-gradient(160deg, oklch(0.08 0.04 150), oklch(0.05 0.02 150))",
+          "linear-gradient(160deg, oklch(0.08 0.035 105), oklch(0.05 0.018 105))",
       }}
     >
       <button
@@ -396,7 +392,7 @@ function QrPage({ onBack }: { onBack: () => void }) {
           >
             <QrCode
               className="w-8 h-8"
-              style={{ color: "oklch(0.08 0.03 150)" }}
+              style={{ color: "oklch(0.08 0.028 105)" }}
             />
           </div>
           <h1
@@ -418,18 +414,16 @@ function QrPage({ onBack }: { onBack: () => void }) {
           className="rounded-2xl p-6 mb-6"
           style={{
             background: "oklch(0.97 0.01 70)",
-            boxShadow: "0 16px 48px oklch(0.04 0.02 150 / 0.7)",
+            boxShadow: "0 16px 48px oklch(0.04 0.018 105 / 0.7)",
           }}
         >
           <div id="qr-canvas" className="flex items-center justify-center">
-            <QRCodeCanvas
-              ref={qrRef}
-              value={appUrl}
-              size={220}
-              bgColor="oklch(0.97 0.01 70)"
-              fgColor="oklch(0.10 0.04 150)"
-              level="H"
-              includeMargin={false}
+            <img
+              src={qrImgUrl}
+              alt="QR Code"
+              width={220}
+              height={220}
+              style={{ borderRadius: "8px" }}
             />
           </div>
         </div>
@@ -449,7 +443,7 @@ function QrPage({ onBack }: { onBack: () => void }) {
           style={{
             background:
               "linear-gradient(135deg, oklch(0.68 0.14 80), oklch(0.55 0.16 75))",
-            color: "oklch(0.08 0.03 150)",
+            color: "oklch(0.08 0.028 105)",
             boxShadow: "0 4px 20px oklch(0.68 0.14 80 / 0.35)",
           }}
         >
@@ -559,20 +553,20 @@ function MenuItemCard({
           className="absolute inset-0"
           style={{
             background:
-              "linear-gradient(180deg, oklch(0.07 0.04 150 / 0.10) 0%, oklch(0.07 0.04 150 / 0.55) 100%)",
+              "linear-gradient(180deg, oklch(0.07 0.035 105 / 0.10) 0%, oklch(0.07 0.035 105 / 0.55) 100%)",
           }}
         />
         {/* Veg dot */}
         <div
           className="absolute top-2 left-2 w-5 h-5 rounded-sm border-2 flex items-center justify-center"
           style={{
-            borderColor: "oklch(0.60 0.22 145)",
-            background: "oklch(0.07 0.04 150 / 0.7)",
+            borderColor: "oklch(0.60 0.19 105)",
+            background: "oklch(0.07 0.035 105 / 0.7)",
           }}
         >
           <div
             className="w-2.5 h-2.5 rounded-full"
-            style={{ background: "oklch(0.60 0.22 145)" }}
+            style={{ background: "oklch(0.60 0.19 105)" }}
           />
         </div>
         {/* Offer badge */}
@@ -582,7 +576,7 @@ function MenuItemCard({
             style={{
               background:
                 "linear-gradient(135deg, oklch(0.68 0.14 80), oklch(0.55 0.16 75))",
-              color: "oklch(0.08 0.03 150)",
+              color: "oklch(0.08 0.028 105)",
             }}
           >
             -{offer.discountPercent}%
@@ -595,7 +589,7 @@ function MenuItemCard({
         className="px-2.5 pt-2.5 pb-2 flex flex-col gap-1.5 flex-1 relative"
         style={{
           background:
-            "linear-gradient(180deg, oklch(0.13 0.05 150) 0%, oklch(0.10 0.04 150) 100%)",
+            "linear-gradient(180deg, oklch(0.13 0.045 105) 0%, oklch(0.10 0.035 105) 100%)",
         }}
       >
         {/* Top gold accent */}
@@ -615,7 +609,7 @@ function MenuItemCard({
           {(item as { note?: string }).note && (
             <span
               className="block font-body font-normal text-xs italic mt-0.5"
-              style={{ color: "oklch(0.60 0.08 150)" }}
+              style={{ color: "oklch(0.60 0.07 105)" }}
             >
               {(item as { note?: string }).note}
             </span>
@@ -662,9 +656,9 @@ function MenuItemCard({
             className="w-7 h-7 rounded-full flex items-center justify-center transition-all shadow-sm active:scale-90"
             style={{
               background:
-                "linear-gradient(135deg, oklch(0.48 0.20 150), oklch(0.35 0.14 150))",
-              border: "1px solid oklch(0.60 0.20 150 / 0.5)",
-              boxShadow: "0 2px 8px oklch(0.04 0.02 150 / 0.6)",
+                "linear-gradient(135deg, oklch(0.48 0.17 105), oklch(0.35 0.12 105))",
+              border: "1px solid oklch(0.60 0.17 105 / 0.5)",
+              boxShadow: "0 2px 8px oklch(0.04 0.018 105 / 0.6)",
             }}
             aria-label={`Add ${item.name} to cart`}
           >
@@ -714,7 +708,7 @@ function CategorySection({
           className="font-display font-bold text-xl sm:text-2xl tracking-[0.12em]"
           style={{
             color: "oklch(0.96 0.015 70)",
-            textShadow: "0 1px 3px oklch(0.04 0.02 150 / 0.8)",
+            textShadow: "0 1px 3px oklch(0.04 0.018 105 / 0.8)",
           }}
         >
           {category.name}
@@ -788,7 +782,7 @@ function UpiPanel() {
       className="mt-3 rounded-xl px-4 py-3.5"
       style={{
         background:
-          "linear-gradient(135deg, oklch(0.18 0.08 150 / 0.4), oklch(0.13 0.05 150 / 0.5))",
+          "linear-gradient(135deg, oklch(0.18 0.07 105 / 0.4), oklch(0.13 0.045 105 / 0.5))",
         border: "1px solid oklch(0.75 0.15 80 / 0.40)",
         boxShadow: "inset 0 1px 0 oklch(0.75 0.15 80 / 0.12)",
       }}
@@ -812,7 +806,7 @@ function UpiPanel() {
           aria-label="Copy UPI ID"
           className="flex items-center gap-1.5 text-xs font-body font-semibold px-3 py-1.5 rounded-lg flex-shrink-0 transition-all"
           style={{
-            background: "oklch(0.55 0.20 150 / 0.15)",
+            background: "oklch(0.55 0.17 105 / 0.15)",
             border: "1px solid oklch(0.75 0.15 80 / 0.45)",
             color: "oklch(0.96 0.015 70)",
           }}
@@ -832,7 +826,7 @@ function UpiPanel() {
       </div>
       <p
         className="text-xs font-body mt-2"
-        style={{ color: "oklch(0.55 0.20 150 / 0.55)" }}
+        style={{ color: "oklch(0.55 0.17 105 / 0.55)" }}
       >
         Is ID pe payment karke order bhejein.
       </p>
@@ -913,20 +907,20 @@ function OrderSheet({
         className="rounded-t-2xl max-h-[90vh] flex flex-col p-0"
         style={{
           background:
-            "linear-gradient(160deg, oklch(0.12 0.05 150), oklch(0.08 0.03 150))",
-          borderTop: "1px solid oklch(0.55 0.20 150 / 0.35)",
-          boxShadow: "0 -8px 40px oklch(0.04 0.02 150 / 0.8)",
+            "linear-gradient(160deg, oklch(0.12 0.045 105), oklch(0.08 0.028 105))",
+          borderTop: "1px solid oklch(0.55 0.17 105 / 0.35)",
+          boxShadow: "0 -8px 40px oklch(0.04 0.018 105 / 0.8)",
         }}
       >
         <SheetHeader
           className="px-5 pt-5 pb-3.5"
-          style={{ borderBottom: "1px solid oklch(0.55 0.20 150 / 0.2)" }}
+          style={{ borderBottom: "1px solid oklch(0.55 0.17 105 / 0.2)" }}
         >
           <SheetTitle
             className="font-display font-bold text-xl flex items-center gap-2.5"
             style={{
               color: "oklch(0.96 0.015 70)",
-              textShadow: "0 0 20px oklch(0.55 0.20 150 / 0.4)",
+              textShadow: "0 0 20px oklch(0.55 0.17 105 / 0.4)",
             }}
           >
             <ShoppingBag
@@ -956,8 +950,8 @@ function OrderSheet({
                       data-ocid={`order.item.${idx + 1}`}
                       className="flex items-center gap-3 rounded-xl px-3 py-2.5"
                       style={{
-                        background: "oklch(0.16 0.06 150 / 0.6)",
-                        border: "1px solid oklch(0.55 0.20 150 / 0.18)",
+                        background: "oklch(0.16 0.055 105 / 0.6)",
+                        border: "1px solid oklch(0.55 0.17 105 / 0.18)",
                       }}
                     >
                       <div className="flex-1 min-w-0">
@@ -978,8 +972,8 @@ function OrderSheet({
                           onClick={() => onDecrease(item.name)}
                           className="w-6 h-6 rounded-full flex items-center justify-center transition-colors"
                           style={{
-                            background: "oklch(0.16 0.05 150)",
-                            border: "1px solid oklch(0.28 0.10 150)",
+                            background: "oklch(0.16 0.045 105)",
+                            border: "1px solid oklch(0.28 0.09 105)",
                           }}
                           aria-label={`Decrease ${item.name}`}
                         >
@@ -997,8 +991,8 @@ function OrderSheet({
                           className="w-6 h-6 rounded-full flex items-center justify-center transition-colors"
                           style={{
                             background:
-                              "linear-gradient(135deg, oklch(0.48 0.20 150), oklch(0.35 0.14 150))",
-                            border: "1px solid oklch(0.55 0.20 150 / 0.35)",
+                              "linear-gradient(135deg, oklch(0.48 0.17 105), oklch(0.35 0.12 105))",
+                            border: "1px solid oklch(0.55 0.17 105 / 0.35)",
                           }}
                           aria-label={`Increase ${item.name}`}
                         >
@@ -1033,8 +1027,8 @@ function OrderSheet({
                 <div
                   className="rounded-xl px-4 py-3 space-y-1.5"
                   style={{
-                    background: "oklch(0.16 0.06 150 / 0.5)",
-                    border: "1px solid oklch(0.55 0.20 150 / 0.18)",
+                    background: "oklch(0.16 0.055 105 / 0.5)",
+                    border: "1px solid oklch(0.55 0.17 105 / 0.18)",
                   }}
                 >
                   {discountAmount > 0 ? (
@@ -1056,7 +1050,7 @@ function OrderSheet({
                         </span>
                       </div>
                       <Separator
-                        style={{ background: "oklch(0.55 0.20 150 / 0.2)" }}
+                        style={{ background: "oklch(0.55 0.17 105 / 0.2)" }}
                       />
                       <div className="flex justify-between font-display font-bold text-base">
                         <span style={{ color: "oklch(0.96 0.015 70)" }}>
@@ -1080,7 +1074,7 @@ function OrderSheet({
                 </div>
 
                 <Separator
-                  style={{ background: "oklch(0.55 0.20 150 / 0.2)" }}
+                  style={{ background: "oklch(0.55 0.17 105 / 0.2)" }}
                 />
 
                 {/* Customer details */}
@@ -1109,8 +1103,8 @@ function OrderSheet({
                       onChange={(e) => setNaam(e.target.value)}
                       className="font-body text-foreground placeholder:text-muted-foreground/60"
                       style={{
-                        background: "oklch(0.16 0.06 150 / 0.7)",
-                        border: "1px solid oklch(0.30 0.10 150 / 0.8)",
+                        background: "oklch(0.16 0.055 105 / 0.7)",
+                        border: "1px solid oklch(0.30 0.09 105 / 0.8)",
                       }}
                     />
                     {errors.naam && (
@@ -1140,8 +1134,8 @@ function OrderSheet({
                       onChange={(e) => setPhone(e.target.value)}
                       className="font-body text-foreground placeholder:text-muted-foreground/60"
                       style={{
-                        background: "oklch(0.16 0.06 150 / 0.7)",
-                        border: "1px solid oklch(0.30 0.10 150 / 0.8)",
+                        background: "oklch(0.16 0.055 105 / 0.7)",
+                        border: "1px solid oklch(0.30 0.09 105 / 0.8)",
                       }}
                     />
                     {errors.phone && (
@@ -1171,8 +1165,8 @@ function OrderSheet({
                       rows={2}
                       className="font-body text-foreground placeholder:text-muted-foreground/60 resize-none"
                       style={{
-                        background: "oklch(0.16 0.06 150 / 0.7)",
-                        border: "1px solid oklch(0.30 0.10 150 / 0.8)",
+                        background: "oklch(0.16 0.055 105 / 0.7)",
+                        border: "1px solid oklch(0.30 0.09 105 / 0.8)",
                       }}
                     />
                     {errors.address && (
@@ -1200,12 +1194,12 @@ function OrderSheet({
                         style={{
                           background:
                             payment === "Cash on Delivery"
-                              ? "oklch(0.20 0.09 150 / 0.7)"
-                              : "oklch(0.14 0.04 150 / 0.5)",
+                              ? "oklch(0.20 0.08 105 / 0.7)"
+                              : "oklch(0.14 0.035 105 / 0.5)",
                           border:
                             payment === "Cash on Delivery"
-                              ? "1px solid oklch(0.55 0.20 150 / 0.55)"
-                              : "1px solid oklch(0.26 0.08 150 / 0.6)",
+                              ? "1px solid oklch(0.55 0.17 105 / 0.55)"
+                              : "1px solid oklch(0.26 0.07 105 / 0.6)",
                         }}
                       >
                         <RadioGroupItem
@@ -1226,12 +1220,12 @@ function OrderSheet({
                         style={{
                           background:
                             payment === "UPI"
-                              ? "oklch(0.20 0.09 150 / 0.7)"
-                              : "oklch(0.14 0.04 150 / 0.5)",
+                              ? "oklch(0.20 0.08 105 / 0.7)"
+                              : "oklch(0.14 0.035 105 / 0.5)",
                           border:
                             payment === "UPI"
-                              ? "1px solid oklch(0.55 0.20 150 / 0.55)"
-                              : "1px solid oklch(0.26 0.08 150 / 0.6)",
+                              ? "1px solid oklch(0.55 0.17 105 / 0.55)"
+                              : "1px solid oklch(0.26 0.07 105 / 0.6)",
                         }}
                       >
                         <RadioGroupItem
@@ -1262,11 +1256,11 @@ function OrderSheet({
                   className="w-full h-13 rounded-xl font-display font-bold text-base uppercase tracking-widest transition-all active:scale-[0.98] py-3.5"
                   style={{
                     background:
-                      "linear-gradient(135deg, oklch(0.50 0.20 150) 0%, oklch(0.38 0.16 150) 100%)",
-                    border: "1px solid oklch(0.65 0.20 150 / 0.5)",
+                      "linear-gradient(135deg, oklch(0.50 0.17 105) 0%, oklch(0.38 0.14 105) 100%)",
+                    border: "1px solid oklch(0.65 0.17 105 / 0.5)",
                     color: "oklch(0.97 0.01 70)",
                     boxShadow:
-                      "0 4px 20px oklch(0.50 0.20 150 / 0.40), inset 0 1px 0 oklch(0.96 0.015 70 / 0.20)",
+                      "0 4px 20px oklch(0.50 0.17 105 / 0.40), inset 0 1px 0 oklch(0.96 0.015 70 / 0.20)",
                   }}
                 >
                   <span className="text-lg mr-2">📲</span>
@@ -1378,7 +1372,7 @@ export default function App() {
           className="relative px-4 pt-5 pb-6 text-center overflow-hidden"
           style={{
             background:
-              "linear-gradient(180deg, oklch(0.08 0.04 150) 0%, oklch(0.10 0.04 150) 100%)",
+              "linear-gradient(180deg, oklch(0.08 0.035 105) 0%, oklch(0.10 0.035 105) 100%)",
           }}
         >
           <div
@@ -1393,9 +1387,9 @@ export default function App() {
             <Badge
               className="border-0 font-body font-semibold uppercase tracking-widest text-xs px-4 py-1.5 gap-1.5"
               style={{
-                background: "oklch(0.55 0.20 150 / 0.15)",
-                border: "1px solid oklch(0.55 0.20 150 / 0.35)",
-                color: "oklch(0.75 0.22 150)",
+                background: "oklch(0.55 0.17 105 / 0.15)",
+                border: "1px solid oklch(0.55 0.17 105 / 0.35)",
+                color: "oklch(0.75 0.18 105)",
               }}
             >
               <Leaf className="w-3 h-3" />
@@ -1408,7 +1402,7 @@ export default function App() {
             style={{
               color: "oklch(0.96 0.015 70)",
               textShadow:
-                "0 2px 12px oklch(0.04 0.02 150 / 0.8), 0 0 30px oklch(0.55 0.20 150 / 0.3)",
+                "0 2px 12px oklch(0.04 0.018 105 / 0.8), 0 0 30px oklch(0.55 0.17 105 / 0.3)",
             }}
           >
             The Hot Chilly Yammy
@@ -1536,8 +1530,8 @@ export default function App() {
         className="mt-4 px-4 py-8 text-center"
         style={{
           background:
-            "linear-gradient(180deg, oklch(0.09 0.04 150) 0%, oklch(0.06 0.02 150) 100%)",
-          borderTop: "1px solid oklch(0.55 0.20 150 / 0.2)",
+            "linear-gradient(180deg, oklch(0.09 0.035 105) 0%, oklch(0.06 0.018 105) 100%)",
+          borderTop: "1px solid oklch(0.55 0.17 105 / 0.2)",
         }}
       >
         <div className="flex items-center justify-center gap-3 mb-5">
@@ -1575,10 +1569,10 @@ export default function App() {
             data-ocid="menu.primary_button"
             className="flex items-center gap-2 rounded-full px-5 py-2 font-display font-semibold tracking-wide transition-all text-sm hover:scale-105"
             style={{
-              background: "oklch(0.50 0.20 150 / 0.12)",
-              border: "1px solid oklch(0.55 0.20 150 / 0.40)",
+              background: "oklch(0.50 0.17 105 / 0.12)",
+              border: "1px solid oklch(0.55 0.17 105 / 0.40)",
               color: "oklch(0.90 0.05 70)",
-              boxShadow: "0 2px 12px oklch(0.04 0.02 150 / 0.4)",
+              boxShadow: "0 2px 12px oklch(0.04 0.018 105 / 0.4)",
             }}
           >
             <Phone className="w-4 h-4" />
@@ -1589,10 +1583,10 @@ export default function App() {
             data-ocid="menu.secondary_button"
             className="flex items-center gap-2 rounded-full px-5 py-2 font-display font-semibold tracking-wide transition-all text-sm hover:scale-105"
             style={{
-              background: "oklch(0.50 0.20 150 / 0.12)",
-              border: "1px solid oklch(0.55 0.20 150 / 0.40)",
+              background: "oklch(0.50 0.17 105 / 0.12)",
+              border: "1px solid oklch(0.55 0.17 105 / 0.40)",
               color: "oklch(0.90 0.05 70)",
-              boxShadow: "0 2px 12px oklch(0.04 0.02 150 / 0.4)",
+              boxShadow: "0 2px 12px oklch(0.04 0.018 105 / 0.4)",
             }}
           >
             <Phone className="w-4 h-4" />
@@ -1620,7 +1614,7 @@ export default function App() {
 
         <div
           className="pt-4"
-          style={{ borderTop: "1px solid oklch(0.55 0.20 150 / 0.12)" }}
+          style={{ borderTop: "1px solid oklch(0.55 0.17 105 / 0.12)" }}
         >
           <p
             className="text-xs font-body"
@@ -1631,7 +1625,7 @@ export default function App() {
               href={`https://caffeine.ai?utm_source=caffeine-footer&utm_medium=referral&utm_content=${encodeURIComponent(typeof window !== "undefined" ? window.location.hostname : "")}`}
               target="_blank"
               rel="noopener noreferrer"
-              style={{ color: "oklch(0.55 0.18 150)" }}
+              style={{ color: "oklch(0.55 0.15 105)" }}
               className="hover:opacity-80 transition-opacity"
             >
               caffeine.ai
@@ -1663,11 +1657,11 @@ export default function App() {
             className="fixed bottom-6 right-5 z-50 flex items-center gap-2.5 rounded-full px-5 py-3.5 font-display font-bold text-sm uppercase tracking-wide transition-colors"
             style={{
               background:
-                "linear-gradient(135deg, oklch(0.50 0.20 150) 0%, oklch(0.38 0.16 150) 100%)",
+                "linear-gradient(135deg, oklch(0.50 0.17 105) 0%, oklch(0.38 0.14 105) 100%)",
               color: "oklch(0.97 0.01 70)",
               boxShadow:
-                "0 4px 20px oklch(0.50 0.20 150 / 0.55), 0 8px 32px oklch(0.04 0.02 150 / 0.5)",
-              border: "1px solid oklch(0.65 0.20 150 / 0.5)",
+                "0 4px 20px oklch(0.50 0.17 105 / 0.55), 0 8px 32px oklch(0.04 0.018 105 / 0.5)",
+              border: "1px solid oklch(0.65 0.17 105 / 0.5)",
             }}
             aria-label={`View cart: ${totalItems} items`}
           >
@@ -1675,7 +1669,7 @@ export default function App() {
             <span>Cart</span>
             <span
               className="rounded-full w-6 h-6 flex items-center justify-center text-xs font-black"
-              style={{ background: "oklch(0.08 0.04 150 / 0.40)" }}
+              style={{ background: "oklch(0.08 0.035 105 / 0.40)" }}
             >
               {totalItems}
             </span>
