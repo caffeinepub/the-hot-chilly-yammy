@@ -1,0 +1,118 @@
+@font-face {
+  font-family: "Bricolage Grotesque";
+  src: url("/assets/fonts/BricolageGrotesque[opsz,wdth,wght].woff2")
+    format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Cabinet Grotesk";
+  src: url("/assets/fonts/CabinetGrotesk[wght].woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Deep Forest Green base — street food energy */
+    --background: 0.22 0.06 145;
+    --foreground: 0.97 0.015 85;
+
+    --card: 0.27 0.065 145;
+    --card-foreground: 0.97 0.015 85;
+
+    --popover: 0.27 0.065 145;
+    --popover-foreground: 0.97 0.015 85;
+
+    /* Vivid orange — primary action color */
+    --primary: 0.72 0.19 55;
+    --primary-foreground: 0.15 0.04 145;
+
+    /* Lighter green for secondary surfaces */
+    --secondary: 0.32 0.07 148;
+    --secondary-foreground: 0.97 0.015 85;
+
+    --muted: 0.3 0.055 145;
+    --muted-foreground: 0.72 0.04 145;
+
+    /* Bright amber accent */
+    --accent: 0.82 0.18 80;
+    --accent-foreground: 0.15 0.04 145;
+
+    --destructive: 0.58 0.22 27;
+    --destructive-foreground: 0.97 0.015 85;
+
+    --border: 0.35 0.07 148;
+    --input: 0.35 0.07 148;
+    --ring: 0.72 0.19 55;
+
+    --radius: 0.5rem;
+
+    --chart-1: 0.72 0.19 55;
+    --chart-2: 0.82 0.18 80;
+    --chart-3: 0.55 0.18 150;
+    --chart-4: 0.65 0.15 190;
+    --chart-5: 0.75 0.12 240;
+
+    --sidebar: 0.2 0.06 145;
+    --sidebar-foreground: 0.97 0.015 85;
+    --sidebar-primary: 0.72 0.19 55;
+    --sidebar-primary-foreground: 0.15 0.04 145;
+    --sidebar-accent: 0.28 0.07 148;
+    --sidebar-accent-foreground: 0.97 0.015 85;
+    --sidebar-border: 0.35 0.07 148;
+    --sidebar-ring: 0.72 0.19 55;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: "Cabinet Grotesk", sans-serif;
+  }
+}
+
+@layer utilities {
+  .text-shadow-glow {
+    text-shadow: 0 0 20px oklch(0.72 0.19 55 / 0.5), 0 0 40px
+      oklch(0.72 0.19 55 / 0.2);
+  }
+
+  .border-dashed-orange {
+    border: 2px dashed oklch(0.72 0.19 55 / 0.6);
+  }
+
+  .category-stripe {
+    background: linear-gradient(
+      90deg,
+      oklch(0.72 0.19 55) 0%,
+      oklch(0.78 0.2 65) 100%
+    );
+  }
+
+  .menu-card-bg {
+    background: linear-gradient(
+      135deg,
+      oklch(0.27 0.07 148) 0%,
+      oklch(0.24 0.065 145) 100%
+    );
+  }
+
+  .hero-gradient {
+    background: linear-gradient(
+      180deg,
+      oklch(0.16 0.055 145 / 0.0) 0%,
+      oklch(0.22 0.06 145) 100%
+    );
+  }
+}
