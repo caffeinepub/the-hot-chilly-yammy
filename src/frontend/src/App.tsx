@@ -13,10 +13,12 @@ import {
 } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Check,
   Copy,
+  Download,
   Leaf,
   Minus,
   Phone,
@@ -71,12 +73,28 @@ const DISH_IMAGES: Record<string, string> = {
 };
 
 const FALLBACK_GRADIENT =
-  "linear-gradient(135deg, oklch(0.20 0.09 105) 0%, oklch(0.30 0.14 105) 100%)";
+  "linear-gradient(135deg, oklch(0.20 0.09 85) 0%, oklch(0.30 0.14 85) 100%)";
 
 type CartItem = { name: string; price: number; quantity: number };
 type OfferState = { discountPercent: number; active: boolean };
 
+export type OrderRecord = {
+  orderNo: string;
+  date: string; // ISO string
+  customerName: string;
+  phone: string;
+  address: string;
+  items: CartItem[];
+  discount: number; // percent
+  discountAmount: number;
+  originalTotal: number;
+  total: number;
+  paymentMethod: string;
+};
+
 const OFFER_KEY = "hcy_offer";
+const ORDERS_KEY = "hcy_orders";
+const ORDER_COUNTER_KEY = "hcy_order_counter";
 const ADMIN_PASSWORD = "8228096793";
 
 function getOffer(): OfferState {
@@ -89,6 +107,541 @@ function getOffer(): OfferState {
 
 function saveOffer(offer: OfferState) {
   localStorage.setItem(OFFER_KEY, JSON.stringify(offer));
+}
+
+function getOrders(): OrderRecord[] {
+  try {
+    const raw = localStorage.getItem(ORDERS_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch {}
+  return [];
+}
+
+function saveOrder(order: OrderRecord) {
+  const existing = getOrders();
+  existing.push(order);
+  localStorage.setItem(ORDERS_KEY, JSON.stringify(existing));
+}
+
+function getNextOrderNo(): string {
+  try {
+    const raw = localStorage.getItem(ORDER_COUNTER_KEY);
+    const n = raw ? Number.parseInt(raw, 10) + 1 : 1;
+    localStorage.setItem(ORDER_COUNTER_KEY, String(n));
+    return String(n).padStart(3, "0");
+  } catch {
+    return "001";
+  }
+}
+
+function formatDate(iso: string) {
+  const d = new Date(iso);
+  return d.toLocaleDateString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+}
+
+function formatTime(iso: string) {
+  const d = new Date(iso);
+  return d.toLocaleTimeString("en-IN", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  });
+}
+
+function toDateKey(iso: string) {
+  return iso.slice(0, 10); // YYYY-MM-DD
+}
+
+// ---------- Bill Modal ----------
+function BillModal({
+  order,
+  onClose,
+}: {
+  order: OrderRecord;
+  onClose: () => void;
+}) {
+  const billRef = useRef<HTMLDivElement>(null);
+
+  const handlePrint = () => {
+    window.print();
+  };
+
+  return (
+    <>
+      <style>{`
+        @media print {
+          body > * { display: none !important; }
+          #bill-print-area { display: block !important; }
+          #bill-print-area * { visibility: visible; }
+        }
+        #bill-print-area { display: none; }
+      `}</style>
+
+      {/* Print-only area */}
+      <div id="bill-print-area" ref={billRef}>
+        <div
+          style={{
+            fontFamily: "serif",
+            maxWidth: 400,
+            margin: "0 auto",
+            padding: "24px 20px",
+          }}
+        >
+          <div style={{ textAlign: "center", marginBottom: 16 }}>
+            <h1 style={{ fontSize: 22, fontWeight: 900, margin: 0 }}>
+              The Hot Chilly Yammy
+            </h1>
+            <p style={{ fontSize: 12, margin: "4px 0 0" }}>
+              Premium Chinese Vegetarian
+            </p>
+            <p style={{ fontSize: 11, margin: "2px 0 0" }}>
+              📞 8582024063 | 8228096793
+            </p>
+          </div>
+          <hr style={{ margin: "10px 0" }} />
+          <div style={{ fontSize: 13, marginBottom: 8 }}>
+            <div style={{ display: "flex", justifyContent: "space-between" }}>
+              <span>
+                <strong>Order #</strong>
+                {order.orderNo}
+              </span>
+              <span>
+                {formatDate(order.date)} {formatTime(order.date)}
+              </span>
+            </div>
+          </div>
+          <hr style={{ margin: "8px 0" }} />
+          <div style={{ fontSize: 13, marginBottom: 10 }}>
+            <p style={{ margin: "2px 0" }}>
+              <strong>Customer:</strong> {order.customerName}
+            </p>
+            <p style={{ margin: "2px 0" }}>
+              <strong>Phone:</strong> {order.phone}
+            </p>
+            <p style={{ margin: "2px 0" }}>
+              <strong>Address:</strong> {order.address}
+            </p>
+            <p style={{ margin: "2px 0" }}>
+              <strong>Payment:</strong> {order.paymentMethod}
+            </p>
+          </div>
+          <hr style={{ margin: "8px 0" }} />
+          <table
+            style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}
+          >
+            <thead>
+              <tr style={{ borderBottom: "1px solid #ccc" }}>
+                <th style={{ textAlign: "left", padding: "4px 0" }}>Item</th>
+                <th style={{ textAlign: "center", padding: "4px 4px" }}>Qty</th>
+                <th style={{ textAlign: "right", padding: "4px 0" }}>Price</th>
+                <th style={{ textAlign: "right", padding: "4px 0" }}>Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {order.items.map((item) => (
+                <tr key={item.name}>
+                  <td style={{ padding: "3px 0" }}>{item.name}</td>
+                  <td style={{ textAlign: "center", padding: "3px 4px" }}>
+                    {item.quantity}
+                  </td>
+                  <td style={{ textAlign: "right", padding: "3px 0" }}>
+                    ₹{item.price}
+                  </td>
+                  <td style={{ textAlign: "right", padding: "3px 0" }}>
+                    ₹{item.price * item.quantity}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <hr style={{ margin: "8px 0" }} />
+          {order.discountAmount > 0 && (
+            <div style={{ fontSize: 13 }}>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <span>Subtotal</span>
+                <span>₹{order.originalTotal}</span>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <span>Discount ({order.discount}%)</span>
+                <span>-₹{order.discountAmount}</span>
+              </div>
+              <hr style={{ margin: "6px 0" }} />
+            </div>
+          )}
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              fontSize: 15,
+              fontWeight: 700,
+            }}
+          >
+            <span>Grand Total</span>
+            <span>₹{order.total}</span>
+          </div>
+          <div style={{ textAlign: "center", marginTop: 16, fontSize: 12 }}>
+            <p style={{ margin: 0 }}>✦ Thank you for your order! ✦</p>
+            <p style={{ margin: "4px 0 0" }}>Please visit again!</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Screen overlay */}
+      <div
+        data-ocid="bill.modal"
+        className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+        style={{ background: "oklch(0.04 0.018 85 / 0.92)" }}
+      >
+        <motion.div
+          initial={{ opacity: 0, scale: 0.92, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.92, y: 20 }}
+          transition={{ duration: 0.35 }}
+          className="w-full max-w-sm rounded-2xl overflow-hidden"
+          style={{
+            background: "oklch(0.97 0.01 70)",
+            boxShadow: "0 24px 80px oklch(0.04 0.018 85 / 0.8)",
+          }}
+        >
+          {/* Bill header */}
+          <div
+            className="px-5 py-4 text-center"
+            style={{
+              background:
+                "linear-gradient(135deg, oklch(0.22 0.08 85), oklch(0.14 0.055 85))",
+            }}
+          >
+            <p
+              className="font-display font-black text-xl"
+              style={{ color: "oklch(0.96 0.015 70)" }}
+            >
+              The Hot Chilly Yammy
+            </p>
+            <p
+              className="font-body text-xs tracking-widest uppercase mt-0.5"
+              style={{ color: "oklch(0.75 0.15 80)" }}
+            >
+              ✦ Premium Chinese Vegetarian ✦
+            </p>
+            <div
+              className="mt-2 inline-flex gap-4 text-xs font-body"
+              style={{ color: "oklch(0.75 0.12 80)" }}
+            >
+              <span>Order #{order.orderNo}</span>
+              <span>·</span>
+              <span>{formatDate(order.date)}</span>
+              <span>·</span>
+              <span>{formatTime(order.date)}</span>
+            </div>
+          </div>
+
+          <div className="px-5 py-4 space-y-3">
+            {/* Customer info */}
+            <div
+              className="rounded-xl px-4 py-3 space-y-1 text-sm font-body"
+              style={{
+                background: "oklch(0.93 0.012 85)",
+                border: "1px solid oklch(0.85 0.025 85)",
+              }}
+            >
+              <p style={{ color: "oklch(0.20 0.04 85)" }}>
+                <strong>Customer:</strong> {order.customerName}
+              </p>
+              <p style={{ color: "oklch(0.30 0.04 85)" }}>
+                <strong>Phone:</strong> {order.phone}
+              </p>
+              <p style={{ color: "oklch(0.30 0.04 85)" }}>
+                <strong>Address:</strong> {order.address}
+              </p>
+              <p style={{ color: "oklch(0.30 0.04 85)" }}>
+                <strong>Payment:</strong> {order.paymentMethod}
+              </p>
+            </div>
+
+            {/* Items table */}
+            <div
+              className="rounded-xl overflow-hidden"
+              style={{ border: "1px solid oklch(0.85 0.025 85)" }}
+            >
+              <table className="w-full text-xs font-body">
+                <thead>
+                  <tr
+                    style={{
+                      background: "oklch(0.90 0.02 85)",
+                      color: "oklch(0.25 0.04 85)",
+                    }}
+                  >
+                    <th className="text-left px-3 py-2 font-semibold">Item</th>
+                    <th className="text-center px-2 py-2 font-semibold">Qty</th>
+                    <th className="text-right px-3 py-2 font-semibold">
+                      Price
+                    </th>
+                    <th className="text-right px-3 py-2 font-semibold">
+                      Total
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {order.items.map((item, idx) => (
+                    <tr
+                      key={item.name}
+                      style={{
+                        background:
+                          idx % 2 === 0
+                            ? "oklch(0.97 0.008 85)"
+                            : "oklch(0.94 0.012 85)",
+                        color: "oklch(0.20 0.04 85)",
+                      }}
+                    >
+                      <td className="px-3 py-2">{item.name}</td>
+                      <td className="text-center px-2 py-2">{item.quantity}</td>
+                      <td className="text-right px-3 py-2">₹{item.price}</td>
+                      <td className="text-right px-3 py-2 font-semibold">
+                        ₹{item.price * item.quantity}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Totals */}
+            <div
+              className="rounded-xl px-4 py-3 space-y-1"
+              style={{
+                background: "oklch(0.93 0.012 85)",
+                border: "1px solid oklch(0.85 0.025 85)",
+              }}
+            >
+              {order.discountAmount > 0 && (
+                <>
+                  <div
+                    className="flex justify-between text-sm font-body"
+                    style={{ color: "oklch(0.40 0.05 85)" }}
+                  >
+                    <span>Subtotal</span>
+                    <span>₹{order.originalTotal}</span>
+                  </div>
+                  <div
+                    className="flex justify-between text-sm font-body"
+                    style={{ color: "oklch(0.40 0.12 80)" }}
+                  >
+                    <span>Discount ({order.discount}%)</span>
+                    <span>-₹{order.discountAmount}</span>
+                  </div>
+                  <Separator style={{ background: "oklch(0.82 0.03 85)" }} />
+                </>
+              )}
+              <div
+                className="flex justify-between font-display font-bold text-base"
+                style={{ color: "oklch(0.15 0.04 85)" }}
+              >
+                <span>Grand Total</span>
+                <span style={{ color: "oklch(0.35 0.14 85)" }}>
+                  ₹{order.total}
+                </span>
+              </div>
+            </div>
+
+            <p
+              className="text-center text-xs font-body py-1"
+              style={{ color: "oklch(0.50 0.06 85)" }}
+            >
+              ✦ Thank you for your order! ✦
+            </p>
+
+            {/* Actions */}
+            <div className="flex gap-3 pt-1">
+              <button
+                type="button"
+                data-ocid="bill.close_button"
+                onClick={onClose}
+                className="flex-1 py-2.5 rounded-xl font-display font-bold text-sm transition-all active:scale-[0.98]"
+                style={{
+                  background: "oklch(0.90 0.02 85)",
+                  border: "1px solid oklch(0.80 0.03 85)",
+                  color: "oklch(0.20 0.04 85)",
+                }}
+              >
+                Close
+              </button>
+              <button
+                type="button"
+                data-ocid="bill.primary_button"
+                onClick={handlePrint}
+                className="flex-1 py-2.5 rounded-xl font-display font-bold text-sm flex items-center justify-center gap-1.5 transition-all active:scale-[0.98]"
+                style={{
+                  background:
+                    "linear-gradient(135deg, oklch(0.50 0.17 85), oklch(0.38 0.14 85))",
+                  color: "oklch(0.97 0.01 70)",
+                  boxShadow: "0 4px 16px oklch(0.50 0.17 85 / 0.35)",
+                }}
+              >
+                <Download className="w-3.5 h-3.5" />
+                Download / Print
+              </button>
+            </div>
+          </div>
+        </motion.div>
+      </div>
+    </>
+  );
+}
+
+// ---------- Daily Hisab Tab ----------
+function DailyHisab() {
+  const [selectedDate, setSelectedDate] = useState<string>(() => {
+    return new Date().toISOString().slice(0, 10);
+  });
+
+  const allOrders = getOrders();
+  const filtered = allOrders.filter((o) => toDateKey(o.date) === selectedDate);
+  const totalCollection = filtered.reduce((sum, o) => sum + o.total, 0);
+
+  return (
+    <div data-ocid="admin.hisab.panel" className="space-y-4">
+      {/* Date picker */}
+      <div className="space-y-2">
+        <Label
+          htmlFor="hisab-date"
+          className="font-body font-semibold text-sm"
+          style={{ color: "oklch(0.90 0.05 70)" }}
+        >
+          Date Select Karein
+        </Label>
+        <Input
+          id="hisab-date"
+          data-ocid="admin.hisab.input"
+          type="date"
+          value={selectedDate}
+          onChange={(e) => setSelectedDate(e.target.value)}
+          className="font-body"
+          style={{
+            background: "oklch(0.16 0.055 85 / 0.7)",
+            border: "1px solid oklch(0.30 0.09 85 / 0.8)",
+            color: "oklch(0.96 0.015 70)",
+          }}
+        />
+      </div>
+
+      {/* Summary */}
+      <div
+        className="rounded-xl px-4 py-3 flex items-center justify-between"
+        style={{
+          background:
+            "linear-gradient(135deg, oklch(0.22 0.10 80 / 0.4), oklch(0.18 0.08 80 / 0.25))",
+          border: "1px solid oklch(0.75 0.15 80 / 0.35)",
+        }}
+      >
+        <p
+          className="font-body text-sm"
+          style={{ color: "oklch(0.80 0.12 80)" }}
+        >
+          Aaj ka Total Collection
+        </p>
+        <p
+          className="font-display font-bold text-xl"
+          style={{ color: "oklch(0.75 0.15 80)" }}
+        >
+          ₹{totalCollection}
+        </p>
+      </div>
+
+      {/* Orders list */}
+      {filtered.length === 0 ? (
+        <div
+          data-ocid="admin.hisab.empty_state"
+          className="rounded-xl py-10 text-center"
+          style={{
+            background: "oklch(0.16 0.062 85 / 0.3)",
+            border: "1px dashed oklch(0.55 0.17 85 / 0.25)",
+          }}
+        >
+          <p
+            className="font-body text-base"
+            style={{ color: "oklch(0.55 0.06 140)" }}
+          >
+            🍽️ Koi order nahi mila
+          </p>
+          <p
+            className="font-body text-xs mt-1"
+            style={{ color: "oklch(0.45 0.04 140)" }}
+          >
+            Is date pe koi order nahi hai
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {filtered.map((order, idx) => (
+            <div
+              key={order.orderNo}
+              data-ocid={`admin.hisab.item.${idx + 1}`}
+              className="rounded-xl px-4 py-3"
+              style={{
+                background: "oklch(0.16 0.055 85 / 0.5)",
+                border: "1px solid oklch(0.55 0.17 85 / 0.18)",
+              }}
+            >
+              <div className="flex items-start justify-between gap-2 mb-1.5">
+                <div className="flex items-center gap-2">
+                  <span
+                    className="font-display font-bold text-sm"
+                    style={{ color: "oklch(0.75 0.15 80)" }}
+                  >
+                    #{order.orderNo}
+                  </span>
+                  <span
+                    className="font-body text-xs"
+                    style={{ color: "oklch(0.65 0.06 140)" }}
+                  >
+                    {formatTime(order.date)}
+                  </span>
+                </div>
+                <span
+                  className="font-display font-bold text-base"
+                  style={{ color: "oklch(0.80 0.15 80)" }}
+                >
+                  ₹{order.total}
+                </span>
+              </div>
+              <p className="font-body font-semibold text-sm text-foreground">
+                {order.customerName}
+              </p>
+              <p
+                className="font-body text-xs mt-0.5"
+                style={{ color: "oklch(0.65 0.06 140)" }}
+              >
+                {order.items.map((i) => `${i.name} x${i.quantity}`).join(", ")}
+              </p>
+              <div className="flex items-center justify-between mt-1.5">
+                <span
+                  className="font-body text-xs px-2 py-0.5 rounded-full"
+                  style={{
+                    background: "oklch(0.22 0.09 85 / 0.5)",
+                    color: "oklch(0.75 0.15 80)",
+                  }}
+                >
+                  {order.paymentMethod}
+                </span>
+                {order.discount > 0 && (
+                  <span
+                    className="font-body text-xs"
+                    style={{ color: "oklch(0.68 0.14 80)" }}
+                  >
+                    {order.discount}% off
+                  </span>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
 
 // ---------- Admin Page ----------
@@ -120,10 +673,9 @@ function AdminPage({ onBack }: { onBack: () => void }) {
       className="min-h-screen font-body flex flex-col items-center justify-center px-4 py-12"
       style={{
         background:
-          "linear-gradient(160deg, oklch(0.08 0.035 105), oklch(0.05 0.018 105))",
+          "linear-gradient(160deg, oklch(0.08 0.035 85), oklch(0.05 0.018 85))",
       }}
     >
-      {/* Back button */}
       <button
         type="button"
         data-ocid="admin.back_button"
@@ -135,23 +687,12 @@ function AdminPage({ onBack }: { onBack: () => void }) {
       </button>
 
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 24 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="w-full max-w-sm"
+        className="w-full max-w-xs"
       >
-        {/* Header */}
-        <div className="text-center mb-8">
-          <div
-            className="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-4"
-            style={{
-              background:
-                "linear-gradient(135deg, oklch(0.48 0.17 105), oklch(0.35 0.12 105))",
-              boxShadow: "0 8px 24px oklch(0.48 0.17 105 / 0.4)",
-            }}
-          >
-            <span className="text-2xl">🔐</span>
-          </div>
+        <div className="text-center mb-6">
           <h1
             className="font-display font-bold text-2xl"
             style={{ color: "oklch(0.96 0.015 70)" }}
@@ -159,7 +700,7 @@ function AdminPage({ onBack }: { onBack: () => void }) {
             Admin Panel
           </h1>
           <p
-            className="text-sm font-body mt-1"
+            className="font-body text-xs mt-1"
             style={{ color: "oklch(0.55 0.08 140)" }}
           >
             The Hot Chilly Yammy
@@ -167,37 +708,36 @@ function AdminPage({ onBack }: { onBack: () => void }) {
         </div>
 
         <div
-          className="rounded-2xl p-6"
+          className="rounded-2xl p-5"
           style={{
             background:
-              "linear-gradient(160deg, oklch(0.12 0.045 105), oklch(0.09 0.028 105))",
-            border: "1px solid oklch(0.55 0.17 105 / 0.25)",
-            boxShadow: "0 8px 40px oklch(0.04 0.018 105 / 0.6)",
+              "linear-gradient(160deg, oklch(0.12 0.045 85), oklch(0.08 0.028 85))",
+            border: "1px solid oklch(0.55 0.17 85 / 0.25)",
+            boxShadow: "0 16px 48px oklch(0.04 0.018 85 / 0.7)",
           }}
         >
           {!authed ? (
-            /* Login form */
             <div className="space-y-4">
               <div className="space-y-1.5">
                 <Label
                   htmlFor="admin-pass"
                   className="font-body font-semibold text-sm"
-                  style={{ color: "oklch(0.80 0.05 70)" }}
+                  style={{ color: "oklch(0.90 0.05 70)" }}
                 >
                   Password
                 </Label>
                 <Input
                   id="admin-pass"
-                  data-ocid="admin.input"
+                  data-ocid="admin.password_input"
                   type="password"
-                  placeholder="Enter admin password"
+                  placeholder="Enter password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleLogin()}
                   className="font-body"
                   style={{
-                    background: "oklch(0.16 0.055 105 / 0.7)",
-                    border: "1px solid oklch(0.30 0.09 105 / 0.8)",
+                    background: "oklch(0.16 0.055 85 / 0.7)",
+                    border: "1px solid oklch(0.30 0.09 85 / 0.8)",
                     color: "oklch(0.96 0.015 70)",
                   }}
                 />
@@ -218,120 +758,147 @@ function AdminPage({ onBack }: { onBack: () => void }) {
                 className="w-full py-3 rounded-xl font-display font-bold text-sm uppercase tracking-wider transition-all active:scale-[0.98]"
                 style={{
                   background:
-                    "linear-gradient(135deg, oklch(0.50 0.17 105) 0%, oklch(0.38 0.14 105) 100%)",
+                    "linear-gradient(135deg, oklch(0.50 0.17 85) 0%, oklch(0.38 0.14 85) 100%)",
                   color: "oklch(0.97 0.01 70)",
-                  boxShadow: "0 4px 20px oklch(0.50 0.17 105 / 0.40)",
+                  boxShadow: "0 4px 20px oklch(0.50 0.17 85 / 0.40)",
                 }}
               >
                 Login
               </button>
             </div>
           ) : (
-            /* Offer control panel */
-            <div className="space-y-5">
-              <div
-                className="rounded-xl px-4 py-3"
+            <Tabs defaultValue="offer" data-ocid="admin.tab">
+              <TabsList
+                className="w-full mb-4"
                 style={{
-                  background: "oklch(0.16 0.062 105 / 0.5)",
-                  border: "1px solid oklch(0.55 0.17 105 / 0.20)",
+                  background: "oklch(0.16 0.062 85 / 0.5)",
+                  border: "1px solid oklch(0.55 0.17 85 / 0.20)",
                 }}
               >
-                <p
-                  className="font-body text-xs uppercase tracking-widest mb-3"
-                  style={{ color: "oklch(0.75 0.15 80 / 0.8)" }}
+                <TabsTrigger
+                  value="offer"
+                  data-ocid="admin.offer.tab"
+                  className="flex-1 font-body font-semibold text-sm"
                 >
-                  ✦ Offer Settings
-                </p>
+                  🎉 Offer Settings
+                </TabsTrigger>
+                <TabsTrigger
+                  value="hisab"
+                  data-ocid="admin.hisab.tab"
+                  className="flex-1 font-body font-semibold text-sm"
+                >
+                  📋 Daily Hisab
+                </TabsTrigger>
+              </TabsList>
 
-                {/* Discount percent */}
-                <div className="space-y-2 mb-4">
-                  <Label
-                    htmlFor="discount-pct"
-                    className="font-body font-semibold text-sm"
-                    style={{ color: "oklch(0.90 0.05 70)" }}
-                  >
-                    Discount % (0–100)
-                  </Label>
-                  <Input
-                    id="discount-pct"
-                    data-ocid="admin.discount_input"
-                    type="number"
-                    min={0}
-                    max={100}
-                    value={offer.discountPercent}
-                    onChange={(e) =>
-                      setOffer((prev) => ({
-                        ...prev,
-                        discountPercent: Math.min(
-                          100,
-                          Math.max(0, Number(e.target.value)),
-                        ),
-                      }))
-                    }
-                    className="font-display font-bold text-lg"
+              <TabsContent value="offer" className="mt-0">
+                <div className="space-y-5">
+                  <div
+                    className="rounded-xl px-4 py-3"
                     style={{
-                      background: "oklch(0.16 0.055 105 / 0.7)",
-                      border: "1px solid oklch(0.30 0.09 105 / 0.8)",
-                      color: "oklch(0.75 0.15 80)",
+                      background: "oklch(0.16 0.062 85 / 0.5)",
+                      border: "1px solid oklch(0.55 0.17 85 / 0.20)",
                     }}
-                  />
-                </div>
-
-                {/* Active toggle */}
-                <div className="flex items-center justify-between">
-                  <Label
-                    htmlFor="offer-active"
-                    className="font-body font-semibold text-sm"
-                    style={{ color: "oklch(0.90 0.05 70)" }}
                   >
-                    Offer Active
-                  </Label>
-                  <Switch
-                    id="offer-active"
-                    data-ocid="admin.offer_switch"
-                    checked={offer.active}
-                    onCheckedChange={(v) =>
-                      setOffer((prev) => ({ ...prev, active: v }))
-                    }
-                  />
-                </div>
-              </div>
+                    <p
+                      className="font-body text-xs uppercase tracking-widest mb-3"
+                      style={{ color: "oklch(0.75 0.15 80 / 0.8)" }}
+                    >
+                      ✦ Offer Settings
+                    </p>
 
-              {/* Preview */}
-              {offer.active && offer.discountPercent > 0 && (
-                <div
-                  className="rounded-xl px-4 py-3 text-center"
-                  style={{
-                    background:
-                      "linear-gradient(135deg, oklch(0.18 0.10 80 / 0.3), oklch(0.14 0.08 80 / 0.2))",
-                    border: "1px solid oklch(0.75 0.15 80 / 0.4)",
-                  }}
-                >
-                  <p
-                    className="font-display font-bold text-sm"
-                    style={{ color: "oklch(0.75 0.15 80)" }}
+                    <div className="space-y-2 mb-4">
+                      <Label
+                        htmlFor="discount-pct"
+                        className="font-body font-semibold text-sm"
+                        style={{ color: "oklch(0.90 0.05 70)" }}
+                      >
+                        Discount % (0–100)
+                      </Label>
+                      <Input
+                        id="discount-pct"
+                        data-ocid="admin.discount_input"
+                        type="number"
+                        min={0}
+                        max={100}
+                        value={offer.discountPercent}
+                        onChange={(e) =>
+                          setOffer((prev) => ({
+                            ...prev,
+                            discountPercent: Math.min(
+                              100,
+                              Math.max(0, Number(e.target.value)),
+                            ),
+                          }))
+                        }
+                        className="font-display font-bold text-lg"
+                        style={{
+                          background: "oklch(0.16 0.055 85 / 0.7)",
+                          border: "1px solid oklch(0.30 0.09 85 / 0.8)",
+                          color: "oklch(0.75 0.15 80)",
+                        }}
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <Label
+                        htmlFor="offer-active"
+                        className="font-body font-semibold text-sm"
+                        style={{ color: "oklch(0.90 0.05 70)" }}
+                      >
+                        Offer Active
+                      </Label>
+                      <Switch
+                        id="offer-active"
+                        data-ocid="admin.offer_switch"
+                        checked={offer.active}
+                        onCheckedChange={(v) =>
+                          setOffer((prev) => ({ ...prev, active: v }))
+                        }
+                      />
+                    </div>
+                  </div>
+
+                  {offer.active && offer.discountPercent > 0 && (
+                    <div
+                      className="rounded-xl px-4 py-3 text-center"
+                      style={{
+                        background:
+                          "linear-gradient(135deg, oklch(0.18 0.10 80 / 0.3), oklch(0.14 0.08 80 / 0.2))",
+                        border: "1px solid oklch(0.75 0.15 80 / 0.4)",
+                      }}
+                    >
+                      <p
+                        className="font-display font-bold text-sm"
+                        style={{ color: "oklch(0.75 0.15 80)" }}
+                      >
+                        🎉 {offer.discountPercent}% OFF — Live Preview
+                      </p>
+                    </div>
+                  )}
+
+                  <button
+                    type="button"
+                    data-ocid="admin.save_button"
+                    onClick={handleSave}
+                    className="w-full py-3 rounded-xl font-display font-bold text-sm uppercase tracking-wider transition-all active:scale-[0.98]"
+                    style={{
+                      background: saved
+                        ? "linear-gradient(135deg, oklch(0.50 0.16 85), oklch(0.38 0.12 85))"
+                        : "linear-gradient(135deg, oklch(0.68 0.14 80), oklch(0.55 0.16 75))",
+                      color: "oklch(0.08 0.028 85)",
+                      boxShadow: "0 4px 20px oklch(0.68 0.14 80 / 0.35)",
+                    }}
                   >
-                    🎉 {offer.discountPercent}% OFF — Live Preview
-                  </p>
+                    {saved ? "✓ Saved!" : "Save Offer"}
+                  </button>
                 </div>
-              )}
+              </TabsContent>
 
-              <button
-                type="button"
-                data-ocid="admin.save_button"
-                onClick={handleSave}
-                className="w-full py-3 rounded-xl font-display font-bold text-sm uppercase tracking-wider transition-all active:scale-[0.98]"
-                style={{
-                  background: saved
-                    ? "linear-gradient(135deg, oklch(0.50 0.16 105), oklch(0.38 0.12 105))"
-                    : "linear-gradient(135deg, oklch(0.68 0.14 80), oklch(0.55 0.16 75))",
-                  color: "oklch(0.08 0.028 105)",
-                  boxShadow: "0 4px 20px oklch(0.68 0.14 80 / 0.35)",
-                }}
-              >
-                {saved ? "✓ Saved!" : "Save Offer"}
-              </button>
-            </div>
+              <TabsContent value="hisab" className="mt-0">
+                <DailyHisab />
+              </TabsContent>
+            </Tabs>
           )}
         </div>
       </motion.div>
@@ -361,7 +928,7 @@ function QrPage({ onBack }: { onBack: () => void }) {
       className="min-h-screen font-body flex flex-col items-center justify-center px-4 py-16"
       style={{
         background:
-          "linear-gradient(160deg, oklch(0.08 0.035 105), oklch(0.05 0.018 105))",
+          "linear-gradient(160deg, oklch(0.08 0.035 85), oklch(0.05 0.018 85))",
       }}
     >
       <button
@@ -380,7 +947,6 @@ function QrPage({ onBack }: { onBack: () => void }) {
         transition={{ duration: 0.5 }}
         className="w-full max-w-xs text-center"
       >
-        {/* Title */}
         <div className="mb-8">
           <div
             className="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-4"
@@ -392,7 +958,7 @@ function QrPage({ onBack }: { onBack: () => void }) {
           >
             <QrCode
               className="w-8 h-8"
-              style={{ color: "oklch(0.08 0.028 105)" }}
+              style={{ color: "oklch(0.08 0.028 85)" }}
             />
           </div>
           <h1
@@ -409,12 +975,11 @@ function QrPage({ onBack }: { onBack: () => void }) {
           </p>
         </div>
 
-        {/* QR Code card */}
         <div
           className="rounded-2xl p-6 mb-6"
           style={{
             background: "oklch(0.97 0.01 70)",
-            boxShadow: "0 16px 48px oklch(0.04 0.018 105 / 0.7)",
+            boxShadow: "0 16px 48px oklch(0.04 0.018 85 / 0.7)",
           }}
         >
           <div id="qr-canvas" className="flex items-center justify-center">
@@ -430,9 +995,9 @@ function QrPage({ onBack }: { onBack: () => void }) {
 
         <p
           className="font-display text-sm mb-6 leading-relaxed"
-          style={{ color: "oklch(0.75 0.10 70)" }}
+          style={{ color: "oklch(0.65 0.08 140)" }}
         >
-          📱 Yeh QR code scan karke seedha app khulega
+          Yeh QR code scan karo — seedha app khulega aur order de sako!
         </p>
 
         <button
@@ -443,58 +1008,29 @@ function QrPage({ onBack }: { onBack: () => void }) {
           style={{
             background:
               "linear-gradient(135deg, oklch(0.68 0.14 80), oklch(0.55 0.16 75))",
-            color: "oklch(0.08 0.028 105)",
+            color: "oklch(0.08 0.028 85)",
             boxShadow: "0 4px 20px oklch(0.68 0.14 80 / 0.35)",
           }}
         >
-          ⬇ Download QR Code
+          Download QR Code
         </button>
 
-        <p
-          className="mt-4 text-xs font-body break-all"
-          style={{ color: "oklch(0.40 0.05 140)" }}
+        <div
+          className="mt-4 rounded-xl px-4 py-3"
+          style={{
+            background: "oklch(0.12 0.04 85 / 0.5)",
+            border: "1px solid oklch(0.55 0.17 85 / 0.2)",
+          }}
         >
-          {appUrl}
-        </p>
+          <p
+            className="font-body text-xs"
+            style={{ color: "oklch(0.55 0.08 140)" }}
+          >
+            App URL: {appUrl}
+          </p>
+        </div>
       </motion.div>
     </div>
-  );
-}
-
-// ---------- Offer Banner ----------
-function OfferBanner({ offer }: { offer: OfferState }) {
-  if (!offer.active || offer.discountPercent <= 0) return null;
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: -10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4 }}
-      data-ocid="menu.offer_banner"
-      className="mx-4 mt-4 rounded-xl px-4 py-3 text-center"
-      style={{
-        background:
-          "linear-gradient(135deg, oklch(0.18 0.10 80 / 0.35), oklch(0.14 0.08 80 / 0.25))",
-        border: "1px solid oklch(0.75 0.15 80 / 0.5)",
-        boxShadow:
-          "0 4px 20px oklch(0.68 0.14 80 / 0.15), inset 0 1px 0 oklch(0.75 0.15 80 / 0.15)",
-      }}
-    >
-      <p
-        className="font-display font-bold text-base tracking-wide"
-        style={{
-          color: "oklch(0.80 0.18 80)",
-          textShadow: "0 0 16px oklch(0.75 0.15 80 / 0.4)",
-        }}
-      >
-        🎉 Special Offer: {offer.discountPercent}% OFF on all items!
-      </p>
-      <p
-        className="text-xs font-body mt-0.5"
-        style={{ color: "oklch(0.75 0.15 80 / 0.75)" }}
-      >
-        Aaj sirf limited time ke liye!
-      </p>
-    </motion.div>
   );
 }
 
@@ -502,12 +1038,18 @@ function OfferBanner({ offer }: { offer: OfferState }) {
 function MenuItemCard({
   item,
   index,
+  cartQuantity,
   onAdd,
+  onIncrease,
+  onDecrease,
   offer,
 }: {
   item: MenuItem;
   index: number;
+  cartQuantity: number;
   onAdd: (item: MenuItem) => void;
+  onIncrease: (name: string) => void;
+  onDecrease: (name: string) => void;
   offer: OfferState;
 }) {
   const markerIndex = index + 1;
@@ -553,20 +1095,20 @@ function MenuItemCard({
           className="absolute inset-0"
           style={{
             background:
-              "linear-gradient(180deg, oklch(0.07 0.035 105 / 0.10) 0%, oklch(0.07 0.035 105 / 0.55) 100%)",
+              "linear-gradient(180deg, oklch(0.07 0.035 85 / 0.10) 0%, oklch(0.07 0.035 85 / 0.55) 100%)",
           }}
         />
         {/* Veg dot */}
         <div
           className="absolute top-2 left-2 w-5 h-5 rounded-sm border-2 flex items-center justify-center"
           style={{
-            borderColor: "oklch(0.60 0.19 105)",
-            background: "oklch(0.07 0.035 105 / 0.7)",
+            borderColor: "oklch(0.60 0.19 85)",
+            background: "oklch(0.07 0.035 85 / 0.7)",
           }}
         >
           <div
             className="w-2.5 h-2.5 rounded-full"
-            style={{ background: "oklch(0.60 0.19 105)" }}
+            style={{ background: "oklch(0.60 0.19 85)" }}
           />
         </div>
         {/* Offer badge */}
@@ -576,10 +1118,24 @@ function MenuItemCard({
             style={{
               background:
                 "linear-gradient(135deg, oklch(0.68 0.14 80), oklch(0.55 0.16 75))",
-              color: "oklch(0.08 0.028 105)",
+              color: "oklch(0.08 0.028 85)",
             }}
           >
             -{offer.discountPercent}%
+          </div>
+        )}
+        {/* Cart quantity badge on photo */}
+        {cartQuantity > 0 && (
+          <div
+            className="absolute bottom-2 right-2 w-6 h-6 rounded-full flex items-center justify-center font-display font-bold text-xs"
+            style={{
+              background:
+                "linear-gradient(135deg, oklch(0.68 0.14 80), oklch(0.55 0.16 75))",
+              color: "oklch(0.08 0.028 85)",
+              boxShadow: "0 2px 8px oklch(0.04 0.018 85 / 0.6)",
+            }}
+          >
+            {cartQuantity}
           </div>
         )}
       </div>
@@ -587,10 +1143,7 @@ function MenuItemCard({
       {/* Card bottom info */}
       <div
         className="px-2.5 pt-2.5 pb-2 flex flex-col gap-1.5 flex-1 relative"
-        style={{
-          background:
-            "linear-gradient(180deg, oklch(0.13 0.045 105) 0%, oklch(0.10 0.035 105) 100%)",
-        }}
+        style={{ background: "#ffffff" }}
       >
         {/* Top gold accent */}
         <div
@@ -603,13 +1156,13 @@ function MenuItemCard({
 
         <p
           className="font-display font-bold text-sm leading-tight"
-          style={{ color: "oklch(0.96 0.015 70)" }}
+          style={{ color: "oklch(0.15 0.04 85)" }}
         >
           {item.name}
           {(item as { note?: string }).note && (
             <span
               className="block font-body font-normal text-xs italic mt-0.5"
-              style={{ color: "oklch(0.60 0.07 105)" }}
+              style={{ color: "oklch(0.60 0.07 85)" }}
             >
               {(item as { note?: string }).note}
             </span>
@@ -649,25 +1202,72 @@ function MenuItemCard({
             )}
           </div>
 
-          <button
-            type="button"
-            data-ocid={`menu.item.button.${markerIndex}`}
-            onClick={() => onAdd(item)}
-            className="w-7 h-7 rounded-full flex items-center justify-center transition-all shadow-sm active:scale-90"
-            style={{
-              background:
-                "linear-gradient(135deg, oklch(0.48 0.17 105), oklch(0.35 0.12 105))",
-              border: "1px solid oklch(0.60 0.17 105 / 0.5)",
-              boxShadow: "0 2px 8px oklch(0.04 0.018 105 / 0.6)",
-            }}
-            aria-label={`Add ${item.name} to cart`}
-          >
-            <Plus
-              className="w-3.5 h-3.5"
-              style={{ color: "oklch(0.97 0.01 70)" }}
-              strokeWidth={2.5}
-            />
-          </button>
+          {/* Quantity controls */}
+          {cartQuantity === 0 ? (
+            <button
+              type="button"
+              data-ocid={`menu.item.button.${markerIndex}`}
+              onClick={() => onAdd(item)}
+              className="w-7 h-7 rounded-full flex items-center justify-center transition-all shadow-sm active:scale-90"
+              style={{
+                background:
+                  "linear-gradient(135deg, oklch(0.48 0.17 85), oklch(0.35 0.12 85))",
+                border: "1px solid oklch(0.60 0.17 85 / 0.5)",
+                boxShadow: "0 2px 8px oklch(0.04 0.018 85 / 0.6)",
+              }}
+              aria-label={`Add ${item.name} to cart`}
+            >
+              <Plus
+                className="w-3.5 h-3.5"
+                style={{ color: "oklch(0.97 0.01 70)" }}
+                strokeWidth={2.5}
+              />
+            </button>
+          ) : (
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                data-ocid={`menu.item.delete_button.${markerIndex}`}
+                onClick={() => onDecrease(item.name)}
+                className="w-6 h-6 rounded-full flex items-center justify-center transition-all active:scale-90"
+                style={{
+                  background: "oklch(0.88 0.025 85)",
+                  border: "1px solid oklch(0.75 0.05 85)",
+                }}
+                aria-label={`Decrease ${item.name}`}
+              >
+                <Minus
+                  className="w-3 h-3"
+                  style={{ color: "oklch(0.25 0.04 85)" }}
+                  strokeWidth={3}
+                />
+              </button>
+              <span
+                className="font-display font-bold text-xs w-4 text-center"
+                style={{ color: "oklch(0.15 0.04 85)" }}
+              >
+                {cartQuantity}
+              </span>
+              <button
+                type="button"
+                data-ocid={`menu.item.button.${markerIndex}`}
+                onClick={() => onIncrease(item.name)}
+                className="w-6 h-6 rounded-full flex items-center justify-center transition-all active:scale-90"
+                style={{
+                  background:
+                    "linear-gradient(135deg, oklch(0.48 0.17 85), oklch(0.35 0.12 85))",
+                  border: "1px solid oklch(0.60 0.17 85 / 0.5)",
+                }}
+                aria-label={`Increase ${item.name}`}
+              >
+                <Plus
+                  className="w-3 h-3"
+                  style={{ color: "oklch(0.97 0.01 70)" }}
+                  strokeWidth={3}
+                />
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </motion.div>
@@ -677,12 +1277,18 @@ function MenuItemCard({
 function CategorySection({
   category,
   sectionIndex,
+  cart,
   onAdd,
+  onIncrease,
+  onDecrease,
   offer,
 }: {
   category: Category;
   sectionIndex: number;
+  cart: CartItem[];
   onAdd: (item: MenuItem) => void;
+  onIncrease: (name: string) => void;
+  onDecrease: (name: string) => void;
   offer: OfferState;
 }) {
   const icon = CATEGORY_ICONS[category.name] || "🍽️";
@@ -708,7 +1314,7 @@ function CategorySection({
           className="font-display font-bold text-xl sm:text-2xl tracking-[0.12em]"
           style={{
             color: "oklch(0.96 0.015 70)",
-            textShadow: "0 1px 3px oklch(0.04 0.018 105 / 0.8)",
+            textShadow: "0 1px 3px oklch(0.04 0.018 85 / 0.8)",
           }}
         >
           {category.name}
@@ -723,15 +1329,21 @@ function CategorySection({
 
       {/* Square grid */}
       <div className="p-3 grid grid-cols-2 gap-3">
-        {category.items.map((item, idx) => (
-          <MenuItemCard
-            key={item.name}
-            item={item}
-            index={idx}
-            onAdd={onAdd}
-            offer={offer}
-          />
-        ))}
+        {category.items.map((item, idx) => {
+          const cartItem = cart.find((c) => c.name === item.name);
+          return (
+            <MenuItemCard
+              key={item.name}
+              item={item}
+              index={idx}
+              cartQuantity={cartItem?.quantity ?? 0}
+              onAdd={onAdd}
+              onIncrease={onIncrease}
+              onDecrease={onDecrease}
+              offer={offer}
+            />
+          );
+        })}
       </div>
     </motion.div>
   );
@@ -778,37 +1390,36 @@ function UpiPanel() {
       initial={{ opacity: 0, y: -6 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -6 }}
-      transition={{ duration: 0.2 }}
-      className="mt-3 rounded-xl px-4 py-3.5"
+      transition={{ duration: 0.25 }}
+      className="rounded-xl px-4 py-3 mt-2"
       style={{
-        background:
-          "linear-gradient(135deg, oklch(0.18 0.07 105 / 0.4), oklch(0.13 0.045 105 / 0.5))",
-        border: "1px solid oklch(0.75 0.15 80 / 0.40)",
-        boxShadow: "inset 0 1px 0 oklch(0.75 0.15 80 / 0.12)",
+        background: "oklch(0.16 0.055 85 / 0.7)",
+        border: "1px solid oklch(0.55 0.17 85 / 0.3)",
       }}
     >
       <p
-        className="text-xs font-body font-semibold uppercase tracking-wider mb-2.5"
-        style={{ color: "oklch(0.75 0.15 80 / 0.85)" }}
+        className="font-body text-xs mb-2"
+        style={{ color: "oklch(0.75 0.15 80)" }}
       >
-        ✦ UPI Payment ID
+        UPI ID
       </p>
-      <div className="flex items-center justify-between gap-3">
-        <span
-          className="font-display font-bold text-base tracking-wide select-all"
+      <div className="flex items-center gap-2">
+        <code
+          className="flex-1 font-display font-bold text-sm"
           style={{ color: "oklch(0.96 0.015 70)" }}
         >
           {UPI_ID}
-        </span>
+        </code>
         <button
           type="button"
+          data-ocid="order.upi.button"
           onClick={handleCopy}
-          aria-label="Copy UPI ID"
-          className="flex items-center gap-1.5 text-xs font-body font-semibold px-3 py-1.5 rounded-lg flex-shrink-0 transition-all"
+          className="flex items-center gap-1 text-xs font-body px-3 py-1.5 rounded-lg transition-all active:scale-95"
           style={{
-            background: "oklch(0.55 0.17 105 / 0.15)",
-            border: "1px solid oklch(0.75 0.15 80 / 0.45)",
-            color: "oklch(0.96 0.015 70)",
+            background: copied
+              ? "linear-gradient(135deg, oklch(0.50 0.16 85), oklch(0.38 0.12 85))"
+              : "linear-gradient(135deg, oklch(0.68 0.14 80), oklch(0.55 0.16 75))",
+            color: copied ? "oklch(0.97 0.01 70)" : "oklch(0.08 0.028 85)",
           }}
         >
           {copied ? (
@@ -826,7 +1437,7 @@ function UpiPanel() {
       </div>
       <p
         className="text-xs font-body mt-2"
-        style={{ color: "oklch(0.55 0.17 105 / 0.55)" }}
+        style={{ color: "oklch(0.55 0.17 85 / 0.55)" }}
       >
         Is ID pe payment karke order bhejein.
       </p>
@@ -842,6 +1453,7 @@ function OrderSheet({
   onDecrease,
   onRemove,
   offer,
+  onOrderPlaced,
 }: {
   open: boolean;
   onClose: () => void;
@@ -850,6 +1462,7 @@ function OrderSheet({
   onDecrease: (name: string) => void;
   onRemove: (name: string) => void;
   offer: OfferState;
+  onOrderPlaced: (order: OrderRecord) => void;
 }) {
   const [naam, setNaam] = useState("");
   const [phone, setPhone] = useState("");
@@ -880,6 +1493,27 @@ function OrderSheet({
   const handleSubmit = () => {
     if (!validate()) return;
 
+    const orderNo = getNextOrderNo();
+    const dateIso = new Date().toISOString();
+
+    const order: OrderRecord = {
+      orderNo,
+      date: dateIso,
+      customerName: naam.trim(),
+      phone: phone.trim(),
+      address: address.trim(),
+      items: cart.map((i) => ({ ...i })),
+      discount: offer.active ? offer.discountPercent : 0,
+      discountAmount,
+      originalTotal,
+      total: grandTotal,
+      paymentMethod: payment,
+    };
+
+    // Save to localStorage
+    saveOrder(order);
+
+    // Send WhatsApp
     const itemLines = cart
       .map(
         (item) =>
@@ -892,11 +1526,13 @@ function OrderSheet({
         ? `\nDiscount Applied: ${offer.discountPercent}%\nDiscount Amount: ₹${discountAmount}\nOriginal Total: ₹${originalTotal}\nFinal Total: ₹${grandTotal}`
         : `\nTotal: ₹${grandTotal}`;
 
-    const message = `🛒 New Order - The Hot Chilly Yammy\n\nItems:\n${itemLines}${discountLine}\n\nCustomer:\nName: ${naam}\nPhone: ${phone}\nAddress: ${address}\nPayment: ${payment}`;
+    const message = `🛒 New Order #${orderNo} - The Hot Chilly Yammy\n\nItems:\n${itemLines}${discountLine}\n\nCustomer:\nName: ${naam}\nPhone: ${phone}\nAddress: ${address}\nPayment: ${payment}`;
 
     const encoded = encodeURIComponent(message);
     window.open(`https://wa.me/918582024063?text=${encoded}`, "_blank");
+
     onClose();
+    onOrderPlaced(order);
   };
 
   return (
@@ -907,20 +1543,20 @@ function OrderSheet({
         className="rounded-t-2xl max-h-[90vh] flex flex-col p-0"
         style={{
           background:
-            "linear-gradient(160deg, oklch(0.12 0.045 105), oklch(0.08 0.028 105))",
-          borderTop: "1px solid oklch(0.55 0.17 105 / 0.35)",
-          boxShadow: "0 -8px 40px oklch(0.04 0.018 105 / 0.8)",
+            "linear-gradient(160deg, oklch(0.12 0.045 85), oklch(0.08 0.028 85))",
+          borderTop: "1px solid oklch(0.55 0.17 85 / 0.35)",
+          boxShadow: "0 -8px 40px oklch(0.04 0.018 85 / 0.8)",
         }}
       >
         <SheetHeader
           className="px-5 pt-5 pb-3.5"
-          style={{ borderBottom: "1px solid oklch(0.55 0.17 105 / 0.2)" }}
+          style={{ borderBottom: "1px solid oklch(0.55 0.17 85 / 0.2)" }}
         >
           <SheetTitle
             className="font-display font-bold text-xl flex items-center gap-2.5"
             style={{
               color: "oklch(0.96 0.015 70)",
-              textShadow: "0 0 20px oklch(0.55 0.17 105 / 0.4)",
+              textShadow: "0 0 20px oklch(0.55 0.17 85 / 0.4)",
             }}
           >
             <ShoppingBag
@@ -950,8 +1586,8 @@ function OrderSheet({
                       data-ocid={`order.item.${idx + 1}`}
                       className="flex items-center gap-3 rounded-xl px-3 py-2.5"
                       style={{
-                        background: "oklch(0.16 0.055 105 / 0.6)",
-                        border: "1px solid oklch(0.55 0.17 105 / 0.18)",
+                        background: "oklch(0.16 0.055 85 / 0.6)",
+                        border: "1px solid oklch(0.55 0.17 85 / 0.18)",
                       }}
                     >
                       <div className="flex-1 min-w-0">
@@ -972,8 +1608,8 @@ function OrderSheet({
                           onClick={() => onDecrease(item.name)}
                           className="w-6 h-6 rounded-full flex items-center justify-center transition-colors"
                           style={{
-                            background: "oklch(0.16 0.045 105)",
-                            border: "1px solid oklch(0.28 0.09 105)",
+                            background: "oklch(0.16 0.045 85)",
+                            border: "1px solid oklch(0.28 0.09 85)",
                           }}
                           aria-label={`Decrease ${item.name}`}
                         >
@@ -991,8 +1627,8 @@ function OrderSheet({
                           className="w-6 h-6 rounded-full flex items-center justify-center transition-colors"
                           style={{
                             background:
-                              "linear-gradient(135deg, oklch(0.48 0.17 105), oklch(0.35 0.12 105))",
-                            border: "1px solid oklch(0.55 0.17 105 / 0.35)",
+                              "linear-gradient(135deg, oklch(0.48 0.17 85), oklch(0.35 0.12 85))",
+                            border: "1px solid oklch(0.55 0.17 85 / 0.35)",
                           }}
                           aria-label={`Increase ${item.name}`}
                         >
@@ -1027,8 +1663,8 @@ function OrderSheet({
                 <div
                   className="rounded-xl px-4 py-3 space-y-1.5"
                   style={{
-                    background: "oklch(0.16 0.055 105 / 0.5)",
-                    border: "1px solid oklch(0.55 0.17 105 / 0.18)",
+                    background: "oklch(0.16 0.055 85 / 0.5)",
+                    border: "1px solid oklch(0.55 0.17 85 / 0.18)",
                   }}
                 >
                   {discountAmount > 0 ? (
@@ -1050,7 +1686,7 @@ function OrderSheet({
                         </span>
                       </div>
                       <Separator
-                        style={{ background: "oklch(0.55 0.17 105 / 0.2)" }}
+                        style={{ background: "oklch(0.55 0.17 85 / 0.2)" }}
                       />
                       <div className="flex justify-between font-display font-bold text-base">
                         <span style={{ color: "oklch(0.96 0.015 70)" }}>
@@ -1074,7 +1710,7 @@ function OrderSheet({
                 </div>
 
                 <Separator
-                  style={{ background: "oklch(0.55 0.17 105 / 0.2)" }}
+                  style={{ background: "oklch(0.55 0.17 85 / 0.2)" }}
                 />
 
                 {/* Customer details */}
@@ -1103,8 +1739,9 @@ function OrderSheet({
                       onChange={(e) => setNaam(e.target.value)}
                       className="font-body text-foreground placeholder:text-muted-foreground/60"
                       style={{
-                        background: "oklch(0.16 0.055 105 / 0.7)",
-                        border: "1px solid oklch(0.30 0.09 105 / 0.8)",
+                        background: "oklch(0.97 0.01 70)",
+                        border: "1px solid oklch(0.30 0.09 85 / 0.8)",
+                        color: "oklch(0.10 0.04 85)",
                       }}
                     />
                     {errors.naam && (
@@ -1134,8 +1771,9 @@ function OrderSheet({
                       onChange={(e) => setPhone(e.target.value)}
                       className="font-body text-foreground placeholder:text-muted-foreground/60"
                       style={{
-                        background: "oklch(0.16 0.055 105 / 0.7)",
-                        border: "1px solid oklch(0.30 0.09 105 / 0.8)",
+                        background: "oklch(0.97 0.01 70)",
+                        border: "1px solid oklch(0.30 0.09 85 / 0.8)",
+                        color: "oklch(0.10 0.04 85)",
                       }}
                     />
                     {errors.phone && (
@@ -1165,8 +1803,9 @@ function OrderSheet({
                       rows={2}
                       className="font-body text-foreground placeholder:text-muted-foreground/60 resize-none"
                       style={{
-                        background: "oklch(0.16 0.055 105 / 0.7)",
-                        border: "1px solid oklch(0.30 0.09 105 / 0.8)",
+                        background: "oklch(0.97 0.01 70)",
+                        border: "1px solid oklch(0.30 0.09 85 / 0.8)",
+                        color: "oklch(0.10 0.04 85)",
                       }}
                     />
                     {errors.address && (
@@ -1194,12 +1833,12 @@ function OrderSheet({
                         style={{
                           background:
                             payment === "Cash on Delivery"
-                              ? "oklch(0.20 0.08 105 / 0.7)"
-                              : "oklch(0.14 0.035 105 / 0.5)",
+                              ? "oklch(0.20 0.08 85 / 0.7)"
+                              : "oklch(0.14 0.035 85 / 0.5)",
                           border:
                             payment === "Cash on Delivery"
-                              ? "1px solid oklch(0.55 0.17 105 / 0.55)"
-                              : "1px solid oklch(0.26 0.07 105 / 0.6)",
+                              ? "1px solid oklch(0.55 0.17 85 / 0.55)"
+                              : "1px solid oklch(0.26 0.07 85 / 0.6)",
                         }}
                       >
                         <RadioGroupItem
@@ -1220,12 +1859,12 @@ function OrderSheet({
                         style={{
                           background:
                             payment === "UPI"
-                              ? "oklch(0.20 0.08 105 / 0.7)"
-                              : "oklch(0.14 0.035 105 / 0.5)",
+                              ? "oklch(0.20 0.08 85 / 0.7)"
+                              : "oklch(0.14 0.035 85 / 0.5)",
                           border:
                             payment === "UPI"
-                              ? "1px solid oklch(0.55 0.17 105 / 0.55)"
-                              : "1px solid oklch(0.26 0.07 105 / 0.6)",
+                              ? "1px solid oklch(0.55 0.17 85 / 0.55)"
+                              : "1px solid oklch(0.26 0.07 85 / 0.6)",
                         }}
                       >
                         <RadioGroupItem
@@ -1256,11 +1895,11 @@ function OrderSheet({
                   className="w-full h-13 rounded-xl font-display font-bold text-base uppercase tracking-widest transition-all active:scale-[0.98] py-3.5"
                   style={{
                     background:
-                      "linear-gradient(135deg, oklch(0.50 0.17 105) 0%, oklch(0.38 0.14 105) 100%)",
-                    border: "1px solid oklch(0.65 0.17 105 / 0.5)",
+                      "linear-gradient(135deg, oklch(0.50 0.17 85) 0%, oklch(0.38 0.14 85) 100%)",
+                    border: "1px solid oklch(0.65 0.17 85 / 0.5)",
                     color: "oklch(0.97 0.01 70)",
                     boxShadow:
-                      "0 4px 20px oklch(0.50 0.17 105 / 0.40), inset 0 1px 0 oklch(0.96 0.015 70 / 0.20)",
+                      "0 4px 20px oklch(0.50 0.17 85 / 0.40), inset 0 1px 0 oklch(0.96 0.015 70 / 0.20)",
                   }}
                 >
                   <span className="text-lg mr-2">📲</span>
@@ -1281,6 +1920,7 @@ export default function App() {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [orderOpen, setOrderOpen] = useState(false);
   const [offer, setOffer] = useState<OfferState>(getOffer);
+  const [billOrder, setBillOrder] = useState<OrderRecord | null>(null);
   const [hash, setHash] = useState(() =>
     typeof window !== "undefined" ? window.location.hash : "",
   );
@@ -1312,6 +1952,11 @@ export default function App() {
   }
 
   const totalItems = cart.reduce((sum, i) => sum + i.quantity, 0);
+  const totalPrice = cart.reduce((sum, i) => sum + i.price * i.quantity, 0);
+  const discountedTotal =
+    offer.active && offer.discountPercent > 0
+      ? Math.round(totalPrice * (1 - offer.discountPercent / 100))
+      : totalPrice;
 
   const handleAdd = (item: MenuItem) => {
     setCart((prev) => {
@@ -1351,6 +1996,11 @@ export default function App() {
     setCart((prev) => prev.filter((c) => c.name !== name));
   };
 
+  const handleOrderPlaced = (order: OrderRecord) => {
+    setCart([]);
+    setBillOrder(order);
+  };
+
   return (
     <div data-ocid="menu.page" className="min-h-screen bg-background font-body">
       {/* Hero Header */}
@@ -1372,7 +2022,7 @@ export default function App() {
           className="relative px-4 pt-5 pb-6 text-center overflow-hidden"
           style={{
             background:
-              "linear-gradient(180deg, oklch(0.08 0.035 105) 0%, oklch(0.10 0.035 105) 100%)",
+              "linear-gradient(180deg, oklch(0.08 0.035 85) 0%, oklch(0.10 0.035 85) 100%)",
           }}
         >
           <div
@@ -1387,9 +2037,9 @@ export default function App() {
             <Badge
               className="border-0 font-body font-semibold uppercase tracking-widest text-xs px-4 py-1.5 gap-1.5"
               style={{
-                background: "oklch(0.55 0.17 105 / 0.15)",
-                border: "1px solid oklch(0.55 0.17 105 / 0.35)",
-                color: "oklch(0.75 0.18 105)",
+                background: "oklch(0.55 0.17 85 / 0.15)",
+                border: "1px solid oklch(0.55 0.17 85 / 0.35)",
+                color: "oklch(0.75 0.18 85)",
               }}
             >
               <Leaf className="w-3 h-3" />
@@ -1402,7 +2052,7 @@ export default function App() {
             style={{
               color: "oklch(0.96 0.015 70)",
               textShadow:
-                "0 2px 12px oklch(0.04 0.018 105 / 0.8), 0 0 30px oklch(0.55 0.17 105 / 0.3)",
+                "0 2px 12px oklch(0.04 0.018 85 / 0.8), 0 0 30px oklch(0.55 0.17 85 / 0.3)",
             }}
           >
             The Hot Chilly Yammy
@@ -1425,255 +2075,156 @@ export default function App() {
             />
             <span
               className="text-xs font-display tracking-[0.5em] uppercase"
-              style={{ color: "oklch(0.75 0.15 80 / 0.8)" }}
+              style={{ color: "oklch(0.75 0.15 80 / 0.7)" }}
             >
-              ✦ ✦ ✦
+              Menu
             </span>
             <div
               className="h-px flex-1 max-w-20"
               style={{
                 background:
-                  "linear-gradient(270deg, transparent, oklch(0.75 0.15 80 / 0.5))",
+                  "linear-gradient(90deg, oklch(0.75 0.15 80 / 0.5), transparent)",
               }}
             />
           </div>
 
-          <p
-            className="font-body italic text-sm tracking-widest"
-            style={{ color: "oklch(0.52 0.06 140)" }}
-          >
-            Fresh · Spicy · Delicious
-          </p>
+          {/* Contact */}
+          <div className="flex items-center justify-center gap-4">
+            <a
+              href="tel:8582024063"
+              data-ocid="menu.contact.button"
+              className="flex items-center gap-1.5 text-xs font-body transition-opacity hover:opacity-80"
+              style={{ color: "oklch(0.75 0.15 80)" }}
+            >
+              <Phone className="w-3 h-3" />
+              8582024063
+            </a>
+            <span style={{ color: "oklch(0.55 0.08 140 / 0.5)" }}>|</span>
+            <a
+              href="tel:8228096793"
+              data-ocid="menu.contact.button"
+              className="flex items-center gap-1.5 text-xs font-body transition-opacity hover:opacity-80"
+              style={{ color: "oklch(0.75 0.15 80)" }}
+            >
+              <Phone className="w-3 h-3" />
+              8228096793
+            </a>
+          </div>
         </motion.div>
       </header>
 
-      {/* Offer Banner */}
-      <OfferBanner offer={offer} />
-
-      {/* Menu Content */}
-      <main className="max-w-lg mx-auto px-4 py-6 pb-28">
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{
-            duration: 0.5,
-            delay: 0.2,
-            ease: [0.25, 0.46, 0.45, 0.94],
-          }}
-          className="text-center mb-6"
-        >
-          <p
-            className="font-display text-xs tracking-[0.45em] uppercase mb-2"
-            style={{ color: "oklch(0.75 0.15 80 / 0.7)" }}
+      {/* Offer banner */}
+      <AnimatePresence>
+        {offer.active && offer.discountPercent > 0 && (
+          <motion.div
+            data-ocid="menu.offer_banner"
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            className="overflow-hidden"
           >
-            ✦ Our Menu ✦
-          </p>
-          <div
-            className="h-px mx-auto w-16"
-            style={{
-              background:
-                "linear-gradient(90deg, transparent, oklch(0.75 0.15 80 / 0.5), transparent)",
-            }}
-          />
-        </motion.div>
-
-        <AnimatePresence mode="wait">
-          {isLoading && <LoadingSkeleton />}
-
-          {isError && (
-            <motion.div
-              data-ocid="menu.error_state"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="text-center py-12"
+            <div
+              className="text-center py-2.5 px-4"
+              style={{
+                background:
+                  "linear-gradient(90deg, oklch(0.22 0.10 80 / 0.9), oklch(0.30 0.14 75 / 0.9))",
+                borderBottom: "1px solid oklch(0.75 0.15 80 / 0.3)",
+              }}
             >
               <p
-                className="font-body text-base"
-                style={{ color: "oklch(0.52 0.05 140)" }}
+                className="font-display font-bold text-sm"
+                style={{ color: "oklch(0.75 0.15 80)" }}
               >
-                Menu load karne mein problem aa gayi. Please refresh karein.
+                🎉 Special Offer: {offer.discountPercent}% OFF on all items!
               </p>
-            </motion.div>
-          )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-          {!isLoading && !isError && menu && (
-            <motion.div
-              key="menu"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.3 }}
-            >
-              {menu.length === 0 ? (
-                <div data-ocid="menu.empty_state" className="text-center py-12">
-                  <p style={{ color: "oklch(0.52 0.05 140)" }}>
-                    Abhi koi items nahi hain.
-                  </p>
-                </div>
-              ) : (
-                menu.map((category, idx) => (
-                  <CategorySection
-                    key={category.name}
-                    category={category}
-                    sectionIndex={idx}
-                    onAdd={handleAdd}
-                    offer={offer}
-                  />
-                ))
-              )}
-            </motion.div>
-          )}
-        </AnimatePresence>
+      {/* Main content */}
+      <main className="px-3 py-5 pb-28">
+        {isLoading ? (
+          <LoadingSkeleton />
+        ) : isError ? (
+          <div
+            data-ocid="menu.error_state"
+            className="text-center py-12 font-body"
+            style={{ color: "oklch(0.65 0.22 25)" }}
+          >
+            Menu load karne mein problem hui. Dobara try karein.
+          </div>
+        ) : (
+          <>
+            {menu?.map((category, idx) => (
+              <CategorySection
+                key={category.name}
+                category={category}
+                sectionIndex={idx}
+                cart={cart}
+                onAdd={handleAdd}
+                onIncrease={handleIncrease}
+                onDecrease={handleDecrease}
+                offer={offer}
+              />
+            ))}
+          </>
+        )}
       </main>
 
-      {/* Footer */}
-      <footer
-        className="mt-4 px-4 py-8 text-center"
-        style={{
-          background:
-            "linear-gradient(180deg, oklch(0.09 0.035 105) 0%, oklch(0.06 0.018 105) 100%)",
-          borderTop: "1px solid oklch(0.55 0.17 105 / 0.2)",
-        }}
-      >
-        <div className="flex items-center justify-center gap-3 mb-5">
-          <div
-            className="h-px flex-1 max-w-20"
-            style={{
-              background:
-                "linear-gradient(90deg, transparent, oklch(0.75 0.15 80 / 0.35))",
-            }}
-          />
-          <span
-            className="text-xs font-display tracking-[0.4em]"
-            style={{ color: "oklch(0.75 0.15 80 / 0.6)" }}
-          >
-            ✦
-          </span>
-          <div
-            className="h-px flex-1 max-w-20"
-            style={{
-              background:
-                "linear-gradient(270deg, transparent, oklch(0.75 0.15 80 / 0.35))",
-            }}
-          />
-        </div>
-
-        <p
-          className="font-display text-xs uppercase tracking-[0.4em] mb-4"
-          style={{ color: "oklch(0.75 0.15 80 / 0.75)" }}
-        >
-          📞 Order Karein
-        </p>
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-5">
-          <a
-            href="tel:8228096793"
-            data-ocid="menu.primary_button"
-            className="flex items-center gap-2 rounded-full px-5 py-2 font-display font-semibold tracking-wide transition-all text-sm hover:scale-105"
-            style={{
-              background: "oklch(0.50 0.17 105 / 0.12)",
-              border: "1px solid oklch(0.55 0.17 105 / 0.40)",
-              color: "oklch(0.90 0.05 70)",
-              boxShadow: "0 2px 12px oklch(0.04 0.018 105 / 0.4)",
-            }}
-          >
-            <Phone className="w-4 h-4" />
-            8228096793
-          </a>
-          <a
-            href="tel:8582024063"
-            data-ocid="menu.secondary_button"
-            className="flex items-center gap-2 rounded-full px-5 py-2 font-display font-semibold tracking-wide transition-all text-sm hover:scale-105"
-            style={{
-              background: "oklch(0.50 0.17 105 / 0.12)",
-              border: "1px solid oklch(0.55 0.17 105 / 0.40)",
-              color: "oklch(0.90 0.05 70)",
-              boxShadow: "0 2px 12px oklch(0.04 0.018 105 / 0.4)",
-            }}
-          >
-            <Phone className="w-4 h-4" />
-            8582024063
-          </a>
-        </div>
-
-        {/* QR Code button */}
-        <div className="flex items-center justify-center gap-4 mb-5">
-          <button
-            type="button"
-            data-ocid="menu.qr_button"
-            onClick={() => navigate("#qr")}
-            className="flex items-center gap-2 rounded-full px-5 py-2 font-display font-semibold tracking-wide transition-all text-sm hover:scale-105"
-            style={{
-              background:
-                "linear-gradient(135deg, oklch(0.68 0.14 80 / 0.15), oklch(0.55 0.16 75 / 0.10))",
-              border: "1px solid oklch(0.68 0.14 80 / 0.40)",
-              color: "oklch(0.80 0.15 80)",
-            }}
-          >
-            <QrCode className="w-4 h-4" />📱 QR Code
-          </button>
-        </div>
-
-        <div
-          className="pt-4"
-          style={{ borderTop: "1px solid oklch(0.55 0.17 105 / 0.12)" }}
-        >
-          <p
-            className="text-xs font-body"
-            style={{ color: "oklch(0.38 0.05 140)" }}
-          >
-            © {new Date().getFullYear()}. Built with ❤️ using{" "}
-            <a
-              href={`https://caffeine.ai?utm_source=caffeine-footer&utm_medium=referral&utm_content=${encodeURIComponent(typeof window !== "undefined" ? window.location.hostname : "")}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{ color: "oklch(0.55 0.15 105)" }}
-              className="hover:opacity-80 transition-opacity"
-            >
-              caffeine.ai
-            </a>
-          </p>
-          {/* Hidden admin link */}
-          <a
-            href="#admin"
-            data-ocid="menu.admin_link"
-            className="mt-2 inline-block text-xs font-body opacity-20 hover:opacity-60 transition-opacity"
-            style={{ color: "oklch(0.55 0.08 140)" }}
-          >
-            Admin
-          </a>
-        </div>
-      </footer>
-
-      {/* Floating Cart Button */}
+      {/* Floating cart bar */}
       <AnimatePresence>
         {totalItems > 0 && (
-          <motion.button
-            data-ocid="order.open_modal_button"
-            initial={{ scale: 0, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0, opacity: 0 }}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => setOrderOpen(true)}
-            className="fixed bottom-6 right-5 z-50 flex items-center gap-2.5 rounded-full px-5 py-3.5 font-display font-bold text-sm uppercase tracking-wide transition-colors"
+          <motion.div
+            data-ocid="menu.cart.panel"
+            initial={{ opacity: 0, y: 80 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 80 }}
+            transition={{ type: "spring", stiffness: 380, damping: 30 }}
+            className="fixed bottom-0 left-0 right-0 z-40 px-4 pb-4 pt-2"
             style={{
               background:
-                "linear-gradient(135deg, oklch(0.50 0.17 105) 0%, oklch(0.38 0.14 105) 100%)",
-              color: "oklch(0.97 0.01 70)",
-              boxShadow:
-                "0 4px 20px oklch(0.50 0.17 105 / 0.55), 0 8px 32px oklch(0.04 0.018 105 / 0.5)",
-              border: "1px solid oklch(0.65 0.17 105 / 0.5)",
+                "linear-gradient(0deg, oklch(0.08 0.035 85 / 0.95) 0%, transparent 100%)",
             }}
-            aria-label={`View cart: ${totalItems} items`}
           >
-            <ShoppingBag className="w-5 h-5" />
-            <span>Cart</span>
-            <span
-              className="rounded-full w-6 h-6 flex items-center justify-center text-xs font-black"
-              style={{ background: "oklch(0.08 0.035 105 / 0.40)" }}
+            <button
+              type="button"
+              data-ocid="menu.cart.button"
+              onClick={() => setOrderOpen(true)}
+              className="w-full py-4 rounded-2xl font-display font-bold text-base flex items-center justify-between px-5 transition-all active:scale-[0.98]"
+              style={{
+                background:
+                  "linear-gradient(135deg, oklch(0.50 0.17 85) 0%, oklch(0.38 0.14 85) 100%)",
+                border: "1px solid oklch(0.65 0.17 85 / 0.5)",
+                color: "oklch(0.97 0.01 70)",
+                boxShadow:
+                  "0 4px 24px oklch(0.50 0.17 85 / 0.50), 0 2px 8px oklch(0.04 0.018 85 / 0.6)",
+              }}
             >
-              {totalItems}
-            </span>
-          </motion.button>
+              <div className="flex items-center gap-2">
+                <div
+                  className="w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs"
+                  style={{
+                    background: "oklch(0.75 0.15 80)",
+                    color: "oklch(0.08 0.028 85)",
+                  }}
+                >
+                  {totalItems}
+                </div>
+                <span>items selected</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span
+                  className="font-display font-bold text-base"
+                  style={{ color: "oklch(0.75 0.15 80)" }}
+                >
+                  ₹{discountedTotal}
+                </span>
+                <ShoppingBag className="w-4 h-4" />
+                <span className="text-sm">Order →</span>
+              </div>
+            </button>
+          </motion.div>
         )}
       </AnimatePresence>
 
@@ -1686,7 +2237,60 @@ export default function App() {
         onDecrease={handleDecrease}
         onRemove={handleRemove}
         offer={offer}
+        onOrderPlaced={handleOrderPlaced}
       />
+
+      {/* Bill Modal */}
+      <AnimatePresence>
+        {billOrder && (
+          <BillModal order={billOrder} onClose={() => setBillOrder(null)} />
+        )}
+      </AnimatePresence>
+
+      {/* Footer */}
+      <footer
+        className="py-6 px-4 text-center"
+        style={{
+          background: "oklch(0.06 0.025 85)",
+          borderTop: "1px solid oklch(0.55 0.17 85 / 0.12)",
+        }}
+      >
+        <div className="flex justify-center gap-4 mb-3">
+          <button
+            type="button"
+            data-ocid="menu.admin.button"
+            onClick={() => navigate("#admin")}
+            className="text-xs font-body opacity-40 hover:opacity-70 transition-opacity"
+            style={{ color: "oklch(0.75 0.15 80)" }}
+          >
+            Admin
+          </button>
+          <span style={{ color: "oklch(0.35 0.04 85)" }}>·</span>
+          <button
+            type="button"
+            data-ocid="menu.qr.button"
+            onClick={() => navigate("#qr")}
+            className="text-xs font-body opacity-40 hover:opacity-70 transition-opacity"
+            style={{ color: "oklch(0.75 0.15 80)" }}
+          >
+            QR Code
+          </button>
+        </div>
+        <p
+          className="text-xs font-body"
+          style={{ color: "oklch(0.40 0.04 85)" }}
+        >
+          © {new Date().getFullYear()}.{" "}
+          <a
+            href={`https://caffeine.ai?utm_source=caffeine-footer&utm_medium=referral&utm_content=${encodeURIComponent(typeof window !== "undefined" ? window.location.hostname : "")}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:opacity-80 transition-opacity"
+          >
+            Built with ❤️ using caffeine.ai
+          </a>
+        </p>
+      </footer>
     </div>
   );
 }

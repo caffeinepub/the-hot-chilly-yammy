@@ -1,31 +1,38 @@
-# The Hot Chilly Yammy Fast Food Menu App
+# The Hot Chilly Yammy
 
 ## Current State
-New project -- no existing code.
+- Mobile-friendly Chinese vegetarian food menu app
+- Dark olive green + white theme, square grid card layout (2 columns)
+- Categories: Spring Roll, Momos, Noodles, Manchurian, Soup, Rice
+- Each dish has photo, name, price; customer order form with Name, Phone, Address
+- Payment: COD and UPI; orders sent to WhatsApp: 8582024063, 8228096793
+- Admin page at #admin (password: 8228096793) for offer/discount management
+- QR code sharing page
+- No quantity selection, no bill generation, no daily order ledger
 
 ## Requested Changes (Diff)
 
 ### Add
-- Digital menu app for "The Hot Chilly Yammy Fast Food" (Only Veg Food)
-- Categories: Spring Roll, Momos, Noodles, Manchurian, Soup
-- All menu items with prices from the uploaded menu image
-- Contact numbers: 8228096793 and 8582024063
-- Green and orange theme matching the original menu poster
+- Quantity selector (+/-) on each dish card
+- After order is placed, generate a downloadable/printable bill with:
+  - Restaurant name, unique order number, date & time
+  - Customer name, phone, address
+  - Itemized list: dish name, quantity, unit price, subtotal
+  - Discount applied (if offer active), Grand Total, Payment method
+- Daily Hisab page in admin panel (after admin login):
+  - All orders for selected date with date filter
+  - Total collection for the day
+  - Orders stored in localStorage
 
 ### Modify
-- N/A
+- Order form: include quantities in WhatsApp message and bill
+- Admin panel: add "Daily Hisab" tab alongside offer/discount settings
 
 ### Remove
-- N/A
+- Nothing
 
 ## Implementation Plan
-- Backend: Store menu categories and items with name and price
-- Frontend: Display menu with category sections, item names, prices
-- Design: Green background, orange accents, bold typography -- matching the poster aesthetic
-- Show contact numbers at the bottom
-- Menu data:
-  - Spring Roll: Veg Roll 30, Veg Spring Roll 49, Paneer Roll 40, Cheese Roll 40
-  - Momos: Veg Momo 49 (Fry+5), Veg Chilli Momo 59, Paneer Momo Fry 49, Saucy Momos 40
-  - Noodles: Veg Noodles 40, Veg Schezwan Noodles 49, Hakka Noodles 40, Paneer Noodles 45
-  - Manchurian: Veg Manchurian 69, Veg Soya Chilli 60, Mushroom Chilli 149, Paneer Chilli 149, Mushroom 65 149, Paneer 65 149
-  - Soup: 10 per bowl
+1. Add quantity state per dish (+/- buttons), cart summary when qty > 0
+2. Order submit: WhatsApp message with itemized quantities + save order to localStorage
+3. Bill component: printable receipt, triggered after order placed, with download/print button
+4. Admin panel: Daily Hisab tab with date filter, orders table, total collection
