@@ -169,7 +169,7 @@ function BillModal({
       : `*Grand Total: ₹${order.total}*`;
     const header = plain ? "The Hot Chilly Yammy" : "🧾 *The Hot Chilly Yammy*";
     return `${header}
-📞 8582024063 | 8228096793
+📞 8582024063 | 9955536306
 
 Order #${order.orderNo}
 📅 ${formatDate(order.date)} ${formatTime(order.date)}
@@ -2212,16 +2212,6 @@ export default function App() {
             >
               <Phone className="w-3 h-3" />
               8582024063
-            </a>
-            <span style={{ color: "oklch(0.55 0.08 140 / 0.5)" }}>|</span>
-            <a
-              href="tel:8228096793"
-              data-ocid="menu.contact.button"
-              className="flex items-center gap-1.5 text-xs font-body transition-opacity hover:opacity-80"
-              style={{ color: "oklch(0.75 0.21 50)" }}
-            >
-              <Phone className="w-3 h-3" />
-              8228096793
             </a>
           </div>
 
