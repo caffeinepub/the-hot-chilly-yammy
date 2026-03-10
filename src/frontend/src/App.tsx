@@ -2,7 +2,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -1531,8 +1530,9 @@ function OrderSheet({
   const [naam, setNaam] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
-  const [payment, setPayment] = useState("Cash on Delivery");
+  const payment = "UPI";
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [utrId, setUtrId] = useState("");
 
   const originalTotal = cart.reduce(
     (sum, item) => sum + item.price * item.quantity,
@@ -1542,7 +1542,8 @@ function OrderSheet({
     offer.active && offer.discountPercent > 0
       ? Math.round(originalTotal * (offer.discountPercent / 100))
       : 0;
-  const grandTotal = originalTotal - discountAmount;
+  const DELIVERY_CHARGE = 40;
+  const grandTotal = originalTotal - discountAmount + DELIVERY_CHARGE;
 
   const validate = () => {
     const errs: Record<string, string> = {};
@@ -1550,6 +1551,7 @@ function OrderSheet({
     if (!phone.trim() || !/^[0-9]{10}$/.test(phone.trim()))
       errs.phone = "10 digit phone number daalein";
     if (!address.trim()) errs.address = "Address zaroori hai";
+    if (!utrId.trim()) errs.utrId = "UTR/Transaction ID zaroori hai";
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
@@ -1572,8 +1574,8 @@ function OrderSheet({
 
     const discountLine =
       discountAmount > 0
-        ? `\nDiscount Applied: ${discountPct}%\nDiscount Amount: ₹${discountAmount}\nOriginal Total: ₹${originalTotal}\nFinal Total: ₹${grandTotal}`
-        : `\nTotal: ₹${grandTotal}`;
+        ? `\nDiscount Applied: ${discountPct}%\nDiscount Amount: ₹${discountAmount}\nOriginal Total: ₹${originalTotal}\nDelivery Charge: ₹${DELIVERY_CHARGE}\nFinal Total: ₹${grandTotal}`
+        : `\nDelivery Charge: ₹${DELIVERY_CHARGE}\nTotal: ₹${grandTotal}`;
 
     // Save to backend
     let orderId = BigInt(Date.now());
@@ -1614,7 +1616,7 @@ function OrderSheet({
       discountAmount,
       originalTotal,
       total: grandTotal,
-      paymentMethod: payment,
+      paymentMethod: "UPI",
     };
 
     const message = `🛒 New Order #${orderNo} - The Hot Chilly Yammy\n\nItems:\n${itemLines}${discountLine}\n\nCustomer:\nName: ${naam}\nPhone: ${phone}\nAddress: ${address}\nPayment: ${payment}`;
@@ -1779,6 +1781,17 @@ function OrderSheet({
                       <Separator
                         style={{ background: "oklch(0.49 0.16 143 / 0.2)" }}
                       />
+                      <div className="flex justify-between text-sm font-body">
+                        <span style={{ color: "oklch(0.80 0.015 70)" }}>
+                          Delivery Charge
+                        </span>
+                        <span style={{ color: "oklch(0.80 0.015 70)" }}>
+                          + ₹{DELIVERY_CHARGE}
+                        </span>
+                      </div>
+                      <Separator
+                        style={{ background: "oklch(0.49 0.16 143 / 0.2)" }}
+                      />
                       <div className="flex justify-between font-display font-bold text-base">
                         <span style={{ color: "oklch(0.96 0.015 70)" }}>
                           Final Total
@@ -1789,14 +1802,27 @@ function OrderSheet({
                       </div>
                     </>
                   ) : (
-                    <div className="flex justify-between font-display font-bold text-base">
-                      <span style={{ color: "oklch(0.96 0.015 70)" }}>
-                        Total
-                      </span>
-                      <span style={{ color: "oklch(0.75 0.21 50)" }}>
-                        ₹{grandTotal}
-                      </span>
-                    </div>
+                    <>
+                      <div className="flex justify-between text-sm font-body">
+                        <span style={{ color: "oklch(0.80 0.015 70)" }}>
+                          Delivery Charge
+                        </span>
+                        <span style={{ color: "oklch(0.80 0.015 70)" }}>
+                          + ₹{DELIVERY_CHARGE}
+                        </span>
+                      </div>
+                      <Separator
+                        style={{ background: "oklch(0.49 0.16 143 / 0.2)" }}
+                      />
+                      <div className="flex justify-between font-display font-bold text-base">
+                        <span style={{ color: "oklch(0.96 0.015 70)" }}>
+                          Total
+                        </span>
+                        <span style={{ color: "oklch(0.75 0.21 50)" }}>
+                          ₹{grandTotal}
+                        </span>
+                      </div>
+                    </>
                   )}
                 </div>
 
@@ -1912,69 +1938,57 @@ function OrderSheet({
                   {/* Payment */}
                   <div className="space-y-2">
                     <Label className="font-body font-semibold text-sm text-foreground/80">
-                      Payment Method *
+                      Payment Method
                     </Label>
-                    <RadioGroup
-                      value={payment}
-                      onValueChange={setPayment}
-                      className="flex gap-3"
+                    <div
+                      className="flex items-center gap-2 rounded-xl px-4 py-2.5"
+                      style={{
+                        background: "oklch(0.37 0.12 143 / 0.7)",
+                        border: "1px solid oklch(0.49 0.16 143 / 0.55)",
+                      }}
                     >
-                      <div
-                        className="flex items-center gap-2 rounded-xl px-4 py-2.5 flex-1 cursor-pointer transition-all"
-                        style={{
-                          background:
-                            payment === "Cash on Delivery"
-                              ? "oklch(0.37 0.12 143 / 0.7)"
-                              : "oklch(0.35 0.053 143 / 0.5)",
-                          border:
-                            payment === "Cash on Delivery"
-                              ? "1px solid oklch(0.49 0.16 143 / 0.55)"
-                              : "1px solid oklch(0.39 0.105 143 / 0.6)",
-                        }}
+                      <span className="font-body font-semibold text-base text-foreground">
+                        📱 UPI (Online Payment Only)
+                      </span>
+                    </div>
+                    <UpiPanel />
+                  </div>
+
+                  {/* UTR / Transaction ID */}
+                  <div className="space-y-1.5">
+                    <Label className="font-body font-semibold text-sm text-foreground/80">
+                      UTR / Transaction ID{" "}
+                      <span style={{ color: "oklch(0.65 0.22 25)" }}>*</span>
+                    </Label>
+                    <p
+                      className="text-xs font-body"
+                      style={{ color: "oklch(0.65 0.07 140)" }}
+                    >
+                      Pehle UPI se payment karein, phir Transaction ID (UTR)
+                      yahan daalen
+                    </p>
+                    <Input
+                      data-ocid="order.utr_input"
+                      placeholder="UTR number (e.g. 4287XXXXXXXXXX)"
+                      value={utrId}
+                      onChange={(e) => setUtrId(e.target.value)}
+                      className="font-body text-sm h-10 rounded-xl"
+                      style={{
+                        background: "oklch(0.97 0.01 70)",
+                        border: errors.utrId
+                          ? "1px solid oklch(0.50 0.22 25)"
+                          : "1px solid oklch(0.41 0.135 143 / 0.8)",
+                        color: "oklch(0.34 0.06 143)",
+                      }}
+                    />
+                    {errors.utrId && (
+                      <p
+                        data-ocid="order.utr_error"
+                        className="text-destructive text-xs font-body"
                       >
-                        <RadioGroupItem
-                          value="Cash on Delivery"
-                          id="pay-cod"
-                          data-ocid="order.radio"
-                          className="border-primary text-primary"
-                        />
-                        <Label
-                          htmlFor="pay-cod"
-                          className="font-body font-semibold text-base text-foreground cursor-pointer"
-                        >
-                          💵 Cash
-                        </Label>
-                      </div>
-                      <div
-                        className="flex items-center gap-2 rounded-xl px-4 py-2.5 flex-1 cursor-pointer transition-all"
-                        style={{
-                          background:
-                            payment === "UPI"
-                              ? "oklch(0.37 0.12 143 / 0.7)"
-                              : "oklch(0.35 0.053 143 / 0.5)",
-                          border:
-                            payment === "UPI"
-                              ? "1px solid oklch(0.49 0.16 143 / 0.55)"
-                              : "1px solid oklch(0.39 0.105 143 / 0.6)",
-                        }}
-                      >
-                        <RadioGroupItem
-                          value="UPI"
-                          id="pay-upi"
-                          data-ocid="order.radio"
-                          className="border-primary text-primary"
-                        />
-                        <Label
-                          htmlFor="pay-upi"
-                          className="font-body font-semibold text-base text-foreground cursor-pointer"
-                        >
-                          📱 UPI
-                        </Label>
-                      </div>
-                    </RadioGroup>
-                    <AnimatePresence>
-                      {payment === "UPI" && <UpiPanel />}
-                    </AnimatePresence>
+                        {errors.utrId}
+                      </p>
+                    )}
                   </div>
                 </div>
 
@@ -1996,7 +2010,7 @@ function OrderSheet({
                   type="button"
                   data-ocid="order.submit_button"
                   onClick={handleSubmit}
-                  disabled={!isOnline}
+                  disabled={!isOnline || !utrId.trim()}
                   className="w-full h-13 rounded-xl font-display font-bold text-base uppercase tracking-widest transition-all active:scale-[0.98] py-3.5 disabled:opacity-50 disabled:cursor-not-allowed"
                   style={{
                     background:
