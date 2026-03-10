@@ -2213,6 +2213,15 @@ export default function App() {
               <Phone className="w-3 h-3" />
               8582024063
             </a>
+            <a
+              href="tel:9955536306"
+              data-ocid="menu.contact2.button"
+              className="flex items-center gap-1.5 text-xs font-body transition-opacity hover:opacity-80"
+              style={{ color: "oklch(0.75 0.21 50)" }}
+            >
+              <Phone className="w-3 h-3" />
+              9955536306
+            </a>
           </div>
 
           {/* Online/Offline Status Badge */}
