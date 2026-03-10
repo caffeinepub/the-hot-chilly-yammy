@@ -20,54 +20,54 @@
 
 @layer base {
   :root {
-    /* Dark olive green + white luxury restaurant theme */
-    --background: 0.22 0.06 85;
-    --foreground: 0.97 0.01 85;
+    /* Green + Orange restaurant theme */
+    --background: 0.43 0.14 143;
+    --foreground: 0.98 0.005 143;
 
-    /* Cards: white background, dark olive text */
-    --card: 0.97 0.01 85;
-    --card-foreground: 0.15 0.04 85;
+    /* Cards: slightly darker green */
+    --card: 0.38 0.12 143;
+    --card-foreground: 0.98 0.005 143;
 
-    --popover: 0.97 0.01 85;
-    --popover-foreground: 0.15 0.04 85;
+    --popover: 0.38 0.12 143;
+    --popover-foreground: 0.98 0.005 143;
 
-    /* Olive green primary */
-    --primary: 0.42 0.1 85;
-    --primary-foreground: 0.97 0.01 85;
+    /* Orange primary */
+    --primary: 0.7 0.2 50;
+    --primary-foreground: 0.98 0.005 50;
 
-    --secondary: 0.28 0.07 85;
-    --secondary-foreground: 0.97 0.01 85;
+    --secondary: 0.36 0.11 143;
+    --secondary-foreground: 0.98 0.005 143;
 
-    --muted: 0.26 0.06 85;
-    --muted-foreground: 0.65 0.05 85;
+    --muted: 0.36 0.1 143;
+    --muted-foreground: 0.8 0.06 143;
 
-    /* Gold accent */
-    --accent: 0.75 0.15 80;
-    --accent-foreground: 0.12 0.02 80;
+    /* Orange accent */
+    --accent: 0.7 0.2 50;
+    --accent-foreground: 0.98 0.005 50;
 
     --destructive: 0.5 0.22 25;
-    --destructive-foreground: 0.97 0.015 85;
+    --destructive-foreground: 0.98 0.005 25;
 
-    --border: 0.32 0.07 85;
-    --input: 0.97 0.01 85;
-    --ring: 0.42 0.1 85;
+    --border: 0.5 0.12 143;
+    --input: 0.98 0.005 143;
+    --ring: 0.7 0.2 50;
 
     --radius: 0.5rem;
 
-    --chart-1: 0.42 0.1 85;
-    --chart-2: 0.55 0.12 85;
-    --chart-3: 0.35 0.09 85;
-    --chart-4: 0.75 0.15 80;
-    --chart-5: 0.65 0.12 90;
+    --chart-1: 0.7 0.2 50;
+    --chart-2: 0.55 0.14 143;
+    --chart-3: 0.45 0.12 143;
+    --chart-4: 0.65 0.18 50;
+    --chart-5: 0.6 0.16 143;
 
-    --sidebar: 0.18 0.05 85;
-    --sidebar-foreground: 0.97 0.01 85;
-    --sidebar-primary: 0.42 0.1 85;
-    --sidebar-primary-foreground: 0.97 0.01 85;
-    --sidebar-accent: 0.28 0.07 85;
-    --sidebar-accent-foreground: 0.97 0.01 85;
-    --sidebar-border: 0.32 0.07 85;
-    --sidebar-ring: 0.42 0.1 85;
+    --sidebar: 0.36 0.12 143;
+    --sidebar-foreground: 0.98 0.005 143;
+    --sidebar-primary: 0.7 0.2 50;
+    --sidebar-primary-foreground: 0.98 0.005 50;
+    --sidebar-accent: 0.4 0.11 143;
+    --sidebar-accent-foreground: 0.98 0.005 143;
+    --sidebar-border: 0.5 0.12 143;
+    --sidebar-ring: 0.7 0.2 50;
   }
 }
 
@@ -78,39 +78,30 @@
   body {
     @apply bg-background text-foreground;
     font-family: "Crimson Pro", serif;
-    background-image: radial-gradient(
-        ellipse 80% 40% at 50% 0%,
-        oklch(0.32 0.09 85 / 0.5) 0%,
-        transparent 70%
-      ),
-      radial-gradient(
-        ellipse 60% 30% at 50% 100%,
-        oklch(0.18 0.05 85 / 0.6) 0%,
-        transparent 60%
-      );
+    background-color: #0b7a3b;
   }
 }
 
 @layer utilities {
   .text-shadow-gold {
-    text-shadow: 0 0 30px oklch(0.75 0.15 80 / 0.7), 0 0 60px
-      oklch(0.75 0.15 80 / 0.3), 0 2px 4px oklch(0.1 0.03 85 / 0.8);
+    text-shadow: 0 0 30px oklch(0.7 0.2 50 / 0.7), 0 0 60px
+      oklch(0.7 0.2 50 / 0.3), 0 2px 4px oklch(0.2 0.08 143 / 0.8);
   }
 
   .text-shadow-glow {
-    text-shadow: 0 0 24px oklch(0.42 0.1 85 / 0.55), 0 0 48px
-      oklch(0.42 0.1 85 / 0.2);
+    text-shadow: 0 0 24px oklch(0.7 0.2 50 / 0.55), 0 0 48px
+      oklch(0.7 0.2 50 / 0.2);
   }
 
   .category-stripe {
     background: linear-gradient(
       105deg,
-      oklch(0.26 0.07 85) 0%,
-      oklch(0.32 0.1 88) 40%,
-      oklch(0.38 0.11 85) 70%,
-      oklch(0.3 0.09 85) 100%
+      oklch(0.38 0.13 143) 0%,
+      oklch(0.42 0.14 145) 40%,
+      oklch(0.45 0.15 143) 70%,
+      oklch(0.4 0.13 143) 100%
     );
-    border-bottom: 1px solid oklch(0.42 0.1 85 / 0.5);
+    border-bottom: 2px solid oklch(0.7 0.2 50 / 0.5);
     position: relative;
     overflow: hidden;
   }
@@ -122,7 +113,7 @@
     background: linear-gradient(
       90deg,
       transparent 0%,
-      oklch(0.75 0.15 80 / 0.06) 50%,
+      oklch(0.7 0.2 50 / 0.05) 50%,
       transparent 100%
     );
   }
@@ -130,41 +121,41 @@
   .menu-card-bg {
     background: linear-gradient(
       160deg,
-      oklch(0.26 0.07 85) 0%,
-      oklch(0.2 0.055 85) 100%
+      oklch(0.4 0.13 143) 0%,
+      oklch(0.36 0.12 143) 100%
     );
-    border: 1px solid oklch(0.35 0.09 85 / 0.7);
-    box-shadow: 0 4px 24px oklch(0.1 0.03 85 / 0.4), inset 0 1px 0
-      oklch(0.42 0.1 85 / 0.1);
+    border: 1px solid oklch(0.5 0.13 143 / 0.7);
+    box-shadow: 0 4px 24px oklch(0.25 0.1 143 / 0.4), inset 0 1px 0
+      oklch(0.7 0.2 50 / 0.1);
   }
 
   .dish-card {
     background: #ffffff;
-    border: 1px solid oklch(0.3 0.08 85 / 0.25);
-    box-shadow: 0 2px 12px oklch(0.1 0.03 85 / 0.18), 0 1px 3px
-      oklch(0.75 0.15 80 / 0.08);
+    border: 1px solid oklch(0.5 0.12 143 / 0.25);
+    box-shadow: 0 2px 12px oklch(0.25 0.1 143 / 0.18), 0 1px 3px
+      oklch(0.7 0.2 50 / 0.08);
   }
 
   .hero-gradient {
     background: linear-gradient(
       180deg,
-      oklch(0.18 0.05 85 / 0.15) 0%,
-      oklch(0.18 0.055 85 / 0.85) 70%,
-      oklch(0.18 0.055 85) 100%
+      oklch(0.4 0.13 143 / 0.15) 0%,
+      oklch(0.36 0.12 143 / 0.85) 70%,
+      oklch(0.36 0.12 143) 100%
     );
   }
 
   .gold-border {
-    border: 1px solid oklch(0.75 0.15 80 / 0.35);
-    box-shadow: 0 0 0 1px oklch(0.75 0.15 80 / 0.1), inset 0 1px 0
-      oklch(0.75 0.15 80 / 0.15);
+    border: 1px solid oklch(0.7 0.2 50 / 0.35);
+    box-shadow: 0 0 0 1px oklch(0.7 0.2 50 / 0.1), inset 0 1px 0
+      oklch(0.7 0.2 50 / 0.15);
   }
 
   .ornamental-divider {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    color: oklch(0.42 0.1 85 / 0.5);
+    color: oklch(0.7 0.2 50 / 0.6);
   }
 
   .ornamental-divider::before,
@@ -175,7 +166,7 @@
     background: linear-gradient(
       90deg,
       transparent,
-      oklch(0.75 0.15 80 / 0.4),
+      oklch(0.7 0.2 50 / 0.5),
       transparent
     );
   }

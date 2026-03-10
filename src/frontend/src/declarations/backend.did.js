@@ -8,6 +8,15 @@
 
 import { IDL } from '@icp-sdk/core/candid';
 
+export const OrderItem = IDL.Record({
+  'itemName' : IDL.Text,
+  'quantity' : IDL.Nat,
+  'price' : IDL.Nat,
+});
+export const PaymentMethod = IDL.Variant({
+  'cod' : IDL.Null,
+  'upi' : IDL.Null,
+});
 export const MenuItem = IDL.Record({
   'name' : IDL.Text,
   'note' : IDL.Opt(IDL.Text),
@@ -17,14 +26,52 @@ export const Category = IDL.Record({
   'name' : IDL.Text,
   'items' : IDL.Vec(MenuItem),
 });
+export const Order = IDL.Record({
+  'customerName' : IDL.Text,
+  'paymentMethod' : PaymentMethod,
+  'customerPhone' : IDL.Text,
+  'discountPercent' : IDL.Nat,
+  'orderId' : IDL.Nat,
+  'customerAddress' : IDL.Text,
+  'totalAmount' : IDL.Nat,
+  'dateString' : IDL.Text,
+  'timestamp' : IDL.Int,
+  'items' : IDL.Vec(OrderItem),
+  'subtotal' : IDL.Nat,
+});
 
 export const idlService = IDL.Service({
+  'addOrder' : IDL.Func(
+      [
+        IDL.Text,
+        IDL.Text,
+        IDL.Text,
+        IDL.Vec(OrderItem),
+        IDL.Nat,
+        IDL.Nat,
+        PaymentMethod,
+        IDL.Text,
+      ],
+      [IDL.Nat],
+      [],
+    ),
+  'getDiscount' : IDL.Func([], [IDL.Nat], ['query']),
   'getMenu' : IDL.Func([], [IDL.Vec(Category)], ['query']),
+  'getOrders' : IDL.Func([], [IDL.Vec(Order)], ['query']),
+  'getOrdersByDate' : IDL.Func([IDL.Text], [IDL.Vec(Order)], ['query']),
+  'getTotalByDate' : IDL.Func([IDL.Text], [IDL.Nat], ['query']),
+  'setDiscount' : IDL.Func([IDL.Nat], [], []),
 });
 
 export const idlInitArgs = [];
 
 export const idlFactory = ({ IDL }) => {
+  const OrderItem = IDL.Record({
+    'itemName' : IDL.Text,
+    'quantity' : IDL.Nat,
+    'price' : IDL.Nat,
+  });
+  const PaymentMethod = IDL.Variant({ 'cod' : IDL.Null, 'upi' : IDL.Null });
   const MenuItem = IDL.Record({
     'name' : IDL.Text,
     'note' : IDL.Opt(IDL.Text),
@@ -34,9 +81,41 @@ export const idlFactory = ({ IDL }) => {
     'name' : IDL.Text,
     'items' : IDL.Vec(MenuItem),
   });
+  const Order = IDL.Record({
+    'customerName' : IDL.Text,
+    'paymentMethod' : PaymentMethod,
+    'customerPhone' : IDL.Text,
+    'discountPercent' : IDL.Nat,
+    'orderId' : IDL.Nat,
+    'customerAddress' : IDL.Text,
+    'totalAmount' : IDL.Nat,
+    'dateString' : IDL.Text,
+    'timestamp' : IDL.Int,
+    'items' : IDL.Vec(OrderItem),
+    'subtotal' : IDL.Nat,
+  });
   
   return IDL.Service({
+    'addOrder' : IDL.Func(
+        [
+          IDL.Text,
+          IDL.Text,
+          IDL.Text,
+          IDL.Vec(OrderItem),
+          IDL.Nat,
+          IDL.Nat,
+          PaymentMethod,
+          IDL.Text,
+        ],
+        [IDL.Nat],
+        [],
+      ),
+    'getDiscount' : IDL.Func([], [IDL.Nat], ['query']),
     'getMenu' : IDL.Func([], [IDL.Vec(Category)], ['query']),
+    'getOrders' : IDL.Func([], [IDL.Vec(Order)], ['query']),
+    'getOrdersByDate' : IDL.Func([IDL.Text], [IDL.Vec(Order)], ['query']),
+    'getTotalByDate' : IDL.Func([IDL.Text], [IDL.Nat], ['query']),
+    'setDiscount' : IDL.Func([IDL.Nat], [], []),
   });
 };
 

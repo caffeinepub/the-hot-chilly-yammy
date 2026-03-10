@@ -21,7 +21,6 @@ import {
   Copy,
   Download,
   Leaf,
-  MessageCircle,
   Minus,
   Phone,
   Plus,
@@ -30,14 +29,13 @@ import {
   Trash2,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Category, MenuItem, Order } from "./backend";
 import { PaymentMethod } from "./backend";
 import { useActor } from "./hooks/useActor";
 import {
   useGetDiscount,
   useGetMenu,
-  useGetOnlineStatus,
   useGetOrdersByDate,
   useGetTotalByDate,
 } from "./hooks/useQueries";
@@ -102,7 +100,6 @@ export type OrderRecord = {
   paymentMethod: string;
 };
 
-const ADMIN_EMAIL = "allrk226@gmail.com";
 const ADMIN_PASSWORD = "8228096793";
 
 function orderToRecord(order: Order): OrderRecord {
@@ -155,57 +152,132 @@ function BillModal({
   order: OrderRecord;
   onClose: () => void;
 }) {
-  const buildBillText = (plain: boolean) => {
-    const sep = plain ? "----------------" : "━━━━━━━━━━━━━━";
-    const itemLines = order.items
-      .map((i) => `• ${i.name} x${i.quantity} = ₹${i.price * i.quantity}`)
-      .join("\n");
-    const discountLine =
-      order.discountAmount > 0
-        ? `Subtotal: ₹${order.originalTotal}\nDiscount (${order.discount}%): -₹${order.discountAmount}\n`
-        : "";
-    const total = plain
-      ? `Grand Total: ₹${order.total}`
-      : `*Grand Total: ₹${order.total}*`;
-    const header = plain ? "The Hot Chilly Yammy" : "🧾 *The Hot Chilly Yammy*";
-    return `${header}
-📞 8582024063 | 8228096793
+  const billRef = useRef<HTMLDivElement>(null);
 
-Order #${order.orderNo}
-📅 ${formatDate(order.date)} ${formatTime(order.date)}
-
-👤 Customer: ${order.customerName}
-📱 Phone: ${order.phone}
-🏠 Address: ${order.address}
-💳 Payment: ${order.paymentMethod}
-
-${sep}
-Items:
-${itemLines}
-${sep}
-${discountLine}${total}
-
-✦ Thank you for your order! ✦`;
-  };
-
-  const handleWhatsAppShare = () => {
-    const text = buildBillText(false);
-    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
-  };
-
-  const handleSaveBill = () => {
-    const billText = buildBillText(true);
-    const blob = new Blob([billText], { type: "text/plain;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `Bill-${order.orderNo}.txt`;
-    a.click();
-    URL.revokeObjectURL(url);
+  const handlePrint = () => {
+    window.print();
   };
 
   return (
     <>
+      <style>{`
+        @media print {
+          body > * { display: none !important; }
+          #bill-print-area { display: block !important; }
+          #bill-print-area * { visibility: visible; }
+        }
+        #bill-print-area { display: none; }
+      `}</style>
+
+      {/* Print-only area */}
+      <div id="bill-print-area" ref={billRef}>
+        <div
+          style={{
+            fontFamily: "serif",
+            maxWidth: 400,
+            margin: "0 auto",
+            padding: "24px 20px",
+          }}
+        >
+          <div style={{ textAlign: "center", marginBottom: 16 }}>
+            <h1 style={{ fontSize: 22, fontWeight: 900, margin: 0 }}>
+              The Hot Chilly Yammy
+            </h1>
+            <p style={{ fontSize: 12, margin: "4px 0 0" }}>
+              Premium Chinese Vegetarian
+            </p>
+            <p style={{ fontSize: 11, margin: "2px 0 0" }}>
+              📞 8582024063 | 8228096793
+            </p>
+          </div>
+          <hr style={{ margin: "10px 0" }} />
+          <div style={{ fontSize: 13, marginBottom: 8 }}>
+            <div style={{ display: "flex", justifyContent: "space-between" }}>
+              <span>
+                <strong>Order #</strong>
+                {order.orderNo}
+              </span>
+              <span>
+                {formatDate(order.date)} {formatTime(order.date)}
+              </span>
+            </div>
+          </div>
+          <hr style={{ margin: "8px 0" }} />
+          <div style={{ fontSize: 13, marginBottom: 10 }}>
+            <p style={{ margin: "2px 0" }}>
+              <strong>Customer:</strong> {order.customerName}
+            </p>
+            <p style={{ margin: "2px 0" }}>
+              <strong>Phone:</strong> {order.phone}
+            </p>
+            <p style={{ margin: "2px 0" }}>
+              <strong>Address:</strong> {order.address}
+            </p>
+            <p style={{ margin: "2px 0" }}>
+              <strong>Payment:</strong> {order.paymentMethod}
+            </p>
+          </div>
+          <hr style={{ margin: "8px 0" }} />
+          <table
+            style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}
+          >
+            <thead>
+              <tr style={{ borderBottom: "1px solid #ccc" }}>
+                <th style={{ textAlign: "left", padding: "4px 0" }}>Item</th>
+                <th style={{ textAlign: "center", padding: "4px 4px" }}>Qty</th>
+                <th style={{ textAlign: "right", padding: "4px 0" }}>Price</th>
+                <th style={{ textAlign: "right", padding: "4px 0" }}>Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {order.items.map((item) => (
+                <tr key={item.name}>
+                  <td style={{ padding: "3px 0" }}>{item.name}</td>
+                  <td style={{ textAlign: "center", padding: "3px 4px" }}>
+                    {item.quantity}
+                  </td>
+                  <td style={{ textAlign: "right", padding: "3px 0" }}>
+                    ₹{item.price}
+                  </td>
+                  <td style={{ textAlign: "right", padding: "3px 0" }}>
+                    ₹{item.price * item.quantity}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <hr style={{ margin: "8px 0" }} />
+          {order.discountAmount > 0 && (
+            <div style={{ fontSize: 13 }}>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <span>Subtotal</span>
+                <span>₹{order.originalTotal}</span>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <span>Discount ({order.discount}%)</span>
+                <span>-₹{order.discountAmount}</span>
+              </div>
+              <hr style={{ margin: "6px 0" }} />
+            </div>
+          )}
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              fontSize: 15,
+              fontWeight: 700,
+            }}
+          >
+            <span>Grand Total</span>
+            <span>₹{order.total}</span>
+          </div>
+          <div style={{ textAlign: "center", marginTop: 16, fontSize: 12 }}>
+            <p style={{ margin: 0 }}>✦ Thank you for your order! ✦</p>
+            <p style={{ margin: "4px 0 0" }}>Please visit again!</p>
+          </div>
+        </div>
+      </div>
+
       {/* Screen overlay */}
       <div
         data-ocid="bill.modal"
@@ -387,33 +459,18 @@ ${discountLine}${total}
               </button>
               <button
                 type="button"
-                data-ocid="bill.whatsapp_button"
-                onClick={handleWhatsAppShare}
+                data-ocid="bill.primary_button"
+                onClick={handlePrint}
                 className="flex-1 py-2.5 rounded-xl font-display font-bold text-sm flex items-center justify-center gap-1.5 transition-all active:scale-[0.98]"
                 style={{
                   background:
-                    "linear-gradient(135deg, oklch(0.52 0.18 143), oklch(0.46 0.18 143))",
+                    "linear-gradient(135deg, oklch(0.48 0.16 143), oklch(0.43 0.16 143))",
                   color: "oklch(0.97 0.01 70)",
                   boxShadow: "0 4px 16px oklch(0.48 0.16 143 / 0.35)",
                 }}
               >
-                <MessageCircle className="w-3.5 h-3.5" />
-                WhatsApp Share
-              </button>
-              <button
-                type="button"
-                data-ocid="bill.primary_button"
-                onClick={handleSaveBill}
-                className="flex-1 py-2.5 rounded-xl font-display font-bold text-sm flex items-center justify-center gap-1.5 transition-all active:scale-[0.98]"
-                style={{
-                  background:
-                    "linear-gradient(135deg, oklch(0.73 0.196 50), oklch(0.68 0.22 50))",
-                  color: "oklch(0.22 0.04 50)",
-                  boxShadow: "0 4px 16px oklch(0.73 0.196 50 / 0.35)",
-                }}
-              >
                 <Download className="w-3.5 h-3.5" />
-                Save Bill
+                Download / Print
               </button>
             </div>
           </div>
@@ -588,7 +645,6 @@ function DailyHisab() {
 
 // ---------- Admin Page ----------
 function AdminPage({ onBack }: { onBack: () => void }) {
-  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [authed, setAuthed] = useState(false);
   const [error, setError] = useState("");
@@ -597,12 +653,9 @@ function AdminPage({ onBack }: { onBack: () => void }) {
     active: false,
   });
   const [saved, setSaved] = useState(false);
-  const [statusSaved, setStatusSaved] = useState(false);
   const { actor } = useActor();
   const queryClient = useQueryClient();
   const { data: discountData } = useGetDiscount();
-  const { data: onlineStatusData } = useGetOnlineStatus();
-  const [statusOnline, setStatusOnline] = useState(true);
 
   // Sync offer from backend when discount data loads
   useEffect(() => {
@@ -612,22 +665,12 @@ function AdminPage({ onBack }: { onBack: () => void }) {
     }
   }, [discountData]);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: intentional sync
-  useEffect(() => {
-    if (onlineStatusData !== undefined) {
-      setStatusOnline(onlineStatusData);
-    }
-  }, [onlineStatusData]);
-
   const handleLogin = () => {
-    if (
-      email.trim().toLowerCase() === ADMIN_EMAIL &&
-      password === ADMIN_PASSWORD
-    ) {
+    if (password === ADMIN_PASSWORD) {
       setAuthed(true);
       setError("");
     } else {
-      setError("Galat Email ya Password. Phir try karein.");
+      setError("Wrong password. Please try again.");
     }
   };
 
@@ -693,30 +736,6 @@ function AdminPage({ onBack }: { onBack: () => void }) {
             <div className="space-y-4">
               <div className="space-y-1.5">
                 <Label
-                  htmlFor="admin-email"
-                  className="font-body font-semibold text-sm"
-                  style={{ color: "oklch(0.90 0.05 70)" }}
-                >
-                  Email ID
-                </Label>
-                <Input
-                  id="admin-email"
-                  data-ocid="admin.email_input"
-                  type="email"
-                  placeholder="Enter your email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && handleLogin()}
-                  className="font-body"
-                  style={{
-                    background: "white",
-                    border: "1px solid oklch(0.41 0.135 143 / 0.8)",
-                    color: "#222",
-                  }}
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label
                   htmlFor="admin-pass"
                   className="font-body font-semibold text-sm"
                   style={{ color: "oklch(0.90 0.05 70)" }}
@@ -733,9 +752,9 @@ function AdminPage({ onBack }: { onBack: () => void }) {
                   onKeyDown={(e) => e.key === "Enter" && handleLogin()}
                   className="font-body"
                   style={{
-                    background: "white",
+                    background: "oklch(0.36 0.083 143 / 0.7)",
                     border: "1px solid oklch(0.41 0.135 143 / 0.8)",
-                    color: "#222",
+                    color: "oklch(0.96 0.015 70)",
                   }}
                 />
               </div>
@@ -764,201 +783,138 @@ function AdminPage({ onBack }: { onBack: () => void }) {
               </button>
             </div>
           ) : (
-            <>
-              {/* Restaurant Status */}
-              <div
-                className="rounded-xl px-4 py-4 mb-4"
+            <Tabs defaultValue="offer" data-ocid="admin.tab">
+              <TabsList
+                className="w-full mb-4"
                 style={{
                   background: "oklch(0.36 0.093 143 / 0.5)",
                   border: "1px solid oklch(0.49 0.16 143 / 0.20)",
                 }}
               >
-                <p
-                  className="font-body text-xs uppercase tracking-widest mb-3"
-                  style={{ color: "oklch(0.75 0.21 50 / 0.8)" }}
+                <TabsTrigger
+                  value="offer"
+                  data-ocid="admin.offer.tab"
+                  className="flex-1 font-body font-semibold text-sm"
                 >
-                  🟢 Restaurant Status
-                </p>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p
-                      className="font-display font-bold text-sm"
-                      style={{ color: "oklch(0.96 0.015 70)" }}
-                    >
-                      {statusOnline ? "OPEN" : "Closed"}
-                    </p>
-                    <p
-                      className="font-body text-xs mt-0.5"
-                      style={{
-                        color: statusOnline
-                          ? "oklch(0.65 0.18 143)"
-                          : "oklch(0.65 0.18 25)",
-                      }}
-                    >
-                      {statusOnline
-                        ? "Customers can order"
-                        : "Orders are disabled"}
-                    </p>
-                  </div>
-                  <Switch
-                    id="status-toggle"
-                    data-ocid="admin.status_switch"
-                    checked={statusOnline}
-                    onCheckedChange={(val) => {
-                      setStatusOnline(val);
-                      localStorage.setItem("shopOnlineStatus", String(val));
-                      queryClient.invalidateQueries({
-                        queryKey: ["onlineStatus"],
-                      });
-                      setStatusSaved(true);
-                      setTimeout(() => setStatusSaved(false), 2000);
+                  🎉 Offer Settings
+                </TabsTrigger>
+                <TabsTrigger
+                  value="hisab"
+                  data-ocid="admin.hisab.tab"
+                  className="flex-1 font-body font-semibold text-sm"
+                >
+                  📋 Daily Hisab
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="offer" className="mt-0">
+                <div className="space-y-5">
+                  <div
+                    className="rounded-xl px-4 py-3"
+                    style={{
+                      background: "oklch(0.36 0.093 143 / 0.5)",
+                      border: "1px solid oklch(0.49 0.16 143 / 0.20)",
                     }}
-                  />
-                </div>
-                {statusSaved && (
-                  <p
-                    data-ocid="admin.status_success"
-                    className="font-body text-xs mt-2"
-                    style={{ color: "oklch(0.65 0.18 143)" }}
                   >
-                    ✓ Saved!
-                  </p>
-                )}
-              </div>
+                    <p
+                      className="font-body text-xs uppercase tracking-widest mb-3"
+                      style={{ color: "oklch(0.75 0.21 50 / 0.8)" }}
+                    >
+                      ✦ Offer Settings
+                    </p>
 
-              <Tabs defaultValue="offer" data-ocid="admin.tab">
-                <TabsList
-                  className="w-full mb-4"
-                  style={{
-                    background: "oklch(0.36 0.093 143 / 0.5)",
-                    border: "1px solid oklch(0.49 0.16 143 / 0.20)",
-                  }}
-                >
-                  <TabsTrigger
-                    value="offer"
-                    data-ocid="admin.offer.tab"
-                    className="flex-1 font-body font-semibold text-sm"
-                  >
-                    🎉 Offer Settings
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="hisab"
-                    data-ocid="admin.hisab.tab"
-                    className="flex-1 font-body font-semibold text-sm"
-                  >
-                    📋 Daily Hisab
-                  </TabsTrigger>
-                </TabsList>
+                    <div className="space-y-2 mb-4">
+                      <Label
+                        htmlFor="discount-pct"
+                        className="font-body font-semibold text-sm"
+                        style={{ color: "oklch(0.90 0.05 70)" }}
+                      >
+                        Discount % (0–100)
+                      </Label>
+                      <Input
+                        id="discount-pct"
+                        data-ocid="admin.discount_input"
+                        type="number"
+                        min={0}
+                        max={100}
+                        value={offer.discountPercent}
+                        onChange={(e) =>
+                          setOffer((prev) => ({
+                            ...prev,
+                            discountPercent: Math.min(
+                              100,
+                              Math.max(0, Number(e.target.value)),
+                            ),
+                          }))
+                        }
+                        className="font-display font-bold text-lg"
+                        style={{
+                          background: "oklch(0.36 0.083 143 / 0.7)",
+                          border: "1px solid oklch(0.41 0.135 143 / 0.8)",
+                          color: "oklch(0.75 0.21 50)",
+                        }}
+                      />
+                    </div>
 
-                <TabsContent value="offer" className="mt-0">
-                  <div className="space-y-5">
+                    <div className="flex items-center justify-between">
+                      <Label
+                        htmlFor="offer-active"
+                        className="font-body font-semibold text-sm"
+                        style={{ color: "oklch(0.90 0.05 70)" }}
+                      >
+                        Offer Active
+                      </Label>
+                      <Switch
+                        id="offer-active"
+                        data-ocid="admin.offer_switch"
+                        checked={offer.active}
+                        onCheckedChange={(v) =>
+                          setOffer((prev) => ({ ...prev, active: v }))
+                        }
+                      />
+                    </div>
+                  </div>
+
+                  {offer.active && offer.discountPercent > 0 && (
                     <div
-                      className="rounded-xl px-4 py-3"
+                      className="rounded-xl px-4 py-3 text-center"
                       style={{
-                        background: "oklch(0.36 0.093 143 / 0.5)",
-                        border: "1px solid oklch(0.49 0.16 143 / 0.20)",
+                        background:
+                          "linear-gradient(135deg, oklch(0.59 0.14 50 / 0.3), oklch(0.14 0.08 80 / 0.2))",
+                        border: "1px solid oklch(0.75 0.21 50 / 0.4)",
                       }}
                     >
                       <p
-                        className="font-body text-xs uppercase tracking-widest mb-3"
-                        style={{ color: "oklch(0.75 0.21 50 / 0.8)" }}
+                        className="font-display font-bold text-sm"
+                        style={{ color: "oklch(0.75 0.21 50)" }}
                       >
-                        ✦ Offer Settings
+                        🎉 {offer.discountPercent}% OFF — Live Preview
                       </p>
-
-                      <div className="space-y-2 mb-4">
-                        <Label
-                          htmlFor="discount-pct"
-                          className="font-body font-semibold text-sm"
-                          style={{ color: "oklch(0.90 0.05 70)" }}
-                        >
-                          Discount % (0–100)
-                        </Label>
-                        <Input
-                          id="discount-pct"
-                          data-ocid="admin.discount_input"
-                          type="number"
-                          min={0}
-                          max={100}
-                          value={offer.discountPercent}
-                          onChange={(e) =>
-                            setOffer((prev) => ({
-                              ...prev,
-                              discountPercent: Math.min(
-                                100,
-                                Math.max(0, Number(e.target.value)),
-                              ),
-                            }))
-                          }
-                          className="font-display font-bold text-lg"
-                          style={{
-                            background: "oklch(0.36 0.083 143 / 0.7)",
-                            border: "1px solid oklch(0.41 0.135 143 / 0.8)",
-                            color: "oklch(0.75 0.21 50)",
-                          }}
-                        />
-                      </div>
-
-                      <div className="flex items-center justify-between">
-                        <Label
-                          htmlFor="offer-active"
-                          className="font-body font-semibold text-sm"
-                          style={{ color: "oklch(0.90 0.05 70)" }}
-                        >
-                          Offer Active
-                        </Label>
-                        <Switch
-                          id="offer-active"
-                          data-ocid="admin.offer_switch"
-                          checked={offer.active}
-                          onCheckedChange={(v) =>
-                            setOffer((prev) => ({ ...prev, active: v }))
-                          }
-                        />
-                      </div>
                     </div>
+                  )}
 
-                    {offer.active && offer.discountPercent > 0 && (
-                      <div
-                        className="rounded-xl px-4 py-3 text-center"
-                        style={{
-                          background:
-                            "linear-gradient(135deg, oklch(0.59 0.14 50 / 0.3), oklch(0.14 0.08 80 / 0.2))",
-                          border: "1px solid oklch(0.75 0.21 50 / 0.4)",
-                        }}
-                      >
-                        <p
-                          className="font-display font-bold text-sm"
-                          style={{ color: "oklch(0.75 0.21 50)" }}
-                        >
-                          🎉 {offer.discountPercent}% OFF — Live Preview
-                        </p>
-                      </div>
-                    )}
+                  <button
+                    type="button"
+                    data-ocid="admin.save_button"
+                    onClick={handleSave}
+                    className="w-full py-3 rounded-xl font-display font-bold text-sm uppercase tracking-wider transition-all active:scale-[0.98]"
+                    style={{
+                      background: saved
+                        ? "linear-gradient(135deg, oklch(0.48 0.16 143), oklch(0.43 0.16 143))"
+                        : "linear-gradient(135deg, oklch(0.73 0.196 50), oklch(0.7 0.22 50))",
+                      color: "oklch(0.33 0.042 143)",
+                      boxShadow: "0 4px 20px oklch(0.73 0.196 50 / 0.35)",
+                    }}
+                  >
+                    {saved ? "✓ Saved!" : "Save Offer"}
+                  </button>
+                </div>
+              </TabsContent>
 
-                    <button
-                      type="button"
-                      data-ocid="admin.save_button"
-                      onClick={handleSave}
-                      className="w-full py-3 rounded-xl font-display font-bold text-sm uppercase tracking-wider transition-all active:scale-[0.98]"
-                      style={{
-                        background: saved
-                          ? "linear-gradient(135deg, oklch(0.48 0.16 143), oklch(0.43 0.16 143))"
-                          : "linear-gradient(135deg, oklch(0.73 0.196 50), oklch(0.7 0.22 50))",
-                        color: "oklch(0.33 0.042 143)",
-                        boxShadow: "0 4px 20px oklch(0.73 0.196 50 / 0.35)",
-                      }}
-                    >
-                      {saved ? "✓ Saved!" : "Save Offer"}
-                    </button>
-                  </div>
-                </TabsContent>
-
-                <TabsContent value="hisab" className="mt-0">
-                  <DailyHisab />
-                </TabsContent>
-              </Tabs>
-            </>
+              <TabsContent value="hisab" className="mt-0">
+                <DailyHisab />
+              </TabsContent>
+            </Tabs>
           )}
         </div>
       </motion.div>
@@ -1514,7 +1470,6 @@ function OrderSheet({
   onRemove,
   offer,
   onOrderPlaced,
-  isOnline,
 }: {
   open: boolean;
   onClose: () => void;
@@ -1524,7 +1479,6 @@ function OrderSheet({
   onRemove: (name: string) => void;
   offer: OfferState;
   onOrderPlaced: (order: OrderRecord) => void;
-  isOnline: boolean;
 }) {
   const { actor } = useActor();
   const queryClient = useQueryClient();
@@ -1979,25 +1933,11 @@ function OrderSheet({
                 </div>
 
                 {/* Submit */}
-                {!isOnline && (
-                  <div
-                    data-ocid="order.offline_state"
-                    className="rounded-xl px-4 py-3 text-center text-sm font-body"
-                    style={{
-                      background: "oklch(0.45 0.15 25 / 0.15)",
-                      border: "1px solid oklch(0.55 0.18 25 / 0.4)",
-                      color: "oklch(0.75 0.15 25)",
-                    }}
-                  >
-                    🔴 Abhi order nahi ho sakta. Restaurant band hai.
-                  </div>
-                )}
                 <button
                   type="button"
                   data-ocid="order.submit_button"
                   onClick={handleSubmit}
-                  disabled={!isOnline}
-                  className="w-full h-13 rounded-xl font-display font-bold text-base uppercase tracking-widest transition-all active:scale-[0.98] py-3.5 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full h-13 rounded-xl font-display font-bold text-base uppercase tracking-widest transition-all active:scale-[0.98] py-3.5"
                   style={{
                     background:
                       "linear-gradient(135deg, oklch(0.48 0.16 143) 0%, oklch(0.43 0.16 143) 100%)",
@@ -2023,8 +1963,6 @@ function OrderSheet({
 export default function App() {
   const { data: menu, isLoading, isError } = useGetMenu();
   const { data: discountData } = useGetDiscount();
-  const { data: onlineStatus } = useGetOnlineStatus();
-  const shopIsOnline = onlineStatus !== false;
   const [cart, setCart] = useState<CartItem[]>([]);
   const [orderOpen, setOrderOpen] = useState(false);
   const [offer, setOffer] = useState<OfferState>({
@@ -2071,7 +2009,6 @@ export default function App() {
       : totalPrice;
 
   const handleAdd = (item: MenuItem) => {
-    if (!shopIsOnline) return;
     setCart((prev) => {
       const existing = prev.find((c) => c.name === item.name);
       if (existing) {
@@ -2087,7 +2024,6 @@ export default function App() {
   };
 
   const handleIncrease = (name: string) => {
-    if (!shopIsOnline) return;
     setCart((prev) =>
       prev.map((c) =>
         c.name === name ? { ...c, quantity: c.quantity + 1 } : c,
@@ -2224,31 +2160,6 @@ export default function App() {
               8228096793
             </a>
           </div>
-
-          {/* Online/Offline Status Badge */}
-          <div className="flex justify-center mt-3">
-            <Badge
-              data-ocid="menu.status_badge"
-              className="border-0 font-body font-semibold text-xs px-4 py-1.5 gap-1.5"
-              style={
-                shopIsOnline
-                  ? {
-                      background: "oklch(0.48 0.16 143 / 0.2)",
-                      border: "1px solid oklch(0.55 0.18 143 / 0.5)",
-                      color: "oklch(0.75 0.16 143)",
-                    }
-                  : {
-                      background: "oklch(0.45 0.15 25 / 0.2)",
-                      border: "1px solid oklch(0.55 0.18 25 / 0.5)",
-                      color: "oklch(0.72 0.15 25)",
-                    }
-              }
-            >
-              {shopIsOnline
-                ? "● OPEN — Order Karein"
-                : "● Closed — Abhi Order Nahi Ho Sakta"}
-            </Badge>
-          </div>
         </motion.div>
       </header>
 
@@ -2282,29 +2193,6 @@ export default function App() {
       </AnimatePresence>
 
       {/* Main content */}
-      {!shopIsOnline && (
-        <div
-          data-ocid="menu.closed_banner"
-          className="mx-3 mt-4 mb-2 rounded-xl px-4 py-5 text-center font-body"
-          style={{
-            background: "oklch(0.45 0.15 25 / 0.18)",
-            border: "2px solid oklch(0.55 0.18 25 / 0.5)",
-            color: "oklch(0.9 0.05 25)",
-          }}
-        >
-          <p className="text-2xl mb-2">🚫</p>
-          <p
-            className="font-bold text-lg mb-1"
-            style={{ color: "oklch(0.85 0.15 25)" }}
-          >
-            Restaurant Abhi Closed Hai
-          </p>
-          <p className="text-sm opacity-80">
-            Ordering band hai. Jab hum dobara open honge tab aap order kar
-            payenge.
-          </p>
-        </div>
-      )}
       <main className="px-3 py-5 pb-28">
         {isLoading ? (
           <LoadingSkeleton />
@@ -2336,7 +2224,7 @@ export default function App() {
 
       {/* Floating cart bar */}
       <AnimatePresence>
-        {totalItems > 0 && shopIsOnline && (
+        {totalItems > 0 && (
           <motion.div
             data-ocid="menu.cart.panel"
             initial={{ opacity: 0, y: 80 }}
@@ -2400,7 +2288,6 @@ export default function App() {
         onRemove={handleRemove}
         offer={offer}
         onOrderPlaced={handleOrderPlaced}
-        isOnline={shopIsOnline}
       />
 
       {/* Bill Modal */}

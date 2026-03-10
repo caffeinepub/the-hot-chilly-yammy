@@ -16,7 +16,47 @@ export interface MenuItem {
   'note' : [] | [string],
   'price' : bigint,
 }
-export interface _SERVICE { 'getMenu' : ActorMethod<[], Array<Category>> }
+export interface Order {
+  'customerName' : string,
+  'paymentMethod' : PaymentMethod,
+  'customerPhone' : string,
+  'discountPercent' : bigint,
+  'orderId' : bigint,
+  'customerAddress' : string,
+  'totalAmount' : bigint,
+  'dateString' : string,
+  'timestamp' : bigint,
+  'items' : Array<OrderItem>,
+  'subtotal' : bigint,
+}
+export interface OrderItem {
+  'itemName' : string,
+  'quantity' : bigint,
+  'price' : bigint,
+}
+export type PaymentMethod = { 'cod' : null } |
+  { 'upi' : null };
+export interface _SERVICE {
+  'addOrder' : ActorMethod<
+    [
+      string,
+      string,
+      string,
+      Array<OrderItem>,
+      bigint,
+      bigint,
+      PaymentMethod,
+      string,
+    ],
+    bigint
+  >,
+  'getDiscount' : ActorMethod<[], bigint>,
+  'getMenu' : ActorMethod<[], Array<Category>>,
+  'getOrders' : ActorMethod<[], Array<Order>>,
+  'getOrdersByDate' : ActorMethod<[string], Array<Order>>,
+  'getTotalByDate' : ActorMethod<[string], bigint>,
+  'setDiscount' : ActorMethod<[bigint], undefined>,
+}
 export declare const idlService: IDL.ServiceClass;
 export declare const idlInitArgs: IDL.Type[];
 export declare const idlFactory: IDL.InterfaceFactory;
