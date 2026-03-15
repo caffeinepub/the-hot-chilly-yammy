@@ -63,12 +63,15 @@ export function useGetDiscount() {
 }
 
 export function useGetOnlineStatus() {
+  const { actor, isFetching } = useActor();
   return useQuery<boolean>({
     queryKey: ["onlineStatus"],
     queryFn: async () => {
-      const stored = localStorage.getItem("shopOnlineStatus");
-      return stored === null ? true : stored === "true";
+      if (!actor) return false;
+      return actor.getOnlineStatus();
     },
+    enabled: !!actor && !isFetching,
+    refetchInterval: 10000, // Poll every 10 seconds for real-time sync
     staleTime: 0,
   });
 }

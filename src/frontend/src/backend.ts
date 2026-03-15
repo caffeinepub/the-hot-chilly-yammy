@@ -124,10 +124,12 @@ export interface backendInterface {
     addOrder(customerName: string, customerPhone: string, customerAddress: string, items: Array<OrderItem>, subtotal: bigint, totalAmount: bigint, paymentMethod: PaymentMethod, dateString: string): Promise<bigint>;
     getDiscount(): Promise<bigint>;
     getMenu(): Promise<Array<Category>>;
+    getOnlineStatus(): Promise<boolean>;
     getOrders(): Promise<Array<Order>>;
     getOrdersByDate(dateString: string): Promise<Array<Order>>;
     getTotalByDate(dateString: string): Promise<bigint>;
     setDiscount(discount: bigint): Promise<void>;
+    setOnlineStatus(status: boolean): Promise<void>;
 }
 import type { Category as _Category, MenuItem as _MenuItem, Order as _Order, OrderItem as _OrderItem, PaymentMethod as _PaymentMethod } from "./declarations/backend.did.d.ts";
 export class Backend implements backendInterface {
@@ -216,6 +218,20 @@ export class Backend implements backendInterface {
             return result;
         }
     }
+    async getOnlineStatus(): Promise<boolean> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getOnlineStatus();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getOnlineStatus();
+            return result;
+        }
+    }
     async setDiscount(arg0: bigint): Promise<void> {
         if (this.processError) {
             try {
@@ -227,6 +243,20 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.setDiscount(arg0);
+            return result;
+        }
+    }
+    async setOnlineStatus(arg0: boolean): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.setOnlineStatus(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.setOnlineStatus(arg0);
             return result;
         }
     }

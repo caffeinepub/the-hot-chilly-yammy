@@ -52,10 +52,12 @@ export interface _SERVICE {
   >,
   'getDiscount' : ActorMethod<[], bigint>,
   'getMenu' : ActorMethod<[], Array<Category>>,
+  'getOnlineStatus' : ActorMethod<[], boolean>,
   'getOrders' : ActorMethod<[], Array<Order>>,
   'getOrdersByDate' : ActorMethod<[string], Array<Order>>,
   'getTotalByDate' : ActorMethod<[string], bigint>,
   'setDiscount' : ActorMethod<[bigint], undefined>,
+  'setOnlineStatus' : ActorMethod<[boolean], undefined>,
 }
 export declare const idlService: IDL.ServiceClass;
 export declare const idlInitArgs: IDL.Type[];

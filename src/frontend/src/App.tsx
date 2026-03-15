@@ -101,8 +101,7 @@ export type OrderRecord = {
   paymentMethod: string;
 };
 
-const ADMIN_EMAIL = "allrk226@gmail.com";
-const ADMIN_PASSWORD = "8228096793";
+const ADMIN_MOBILE = "8582024063";
 
 function orderToRecord(order: Order): OrderRecord {
   const subtotal = Number(order.subtotal);
@@ -587,8 +586,7 @@ function DailyHisab() {
 
 // ---------- Admin Page ----------
 function AdminPage({ onBack }: { onBack: () => void }) {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [mobileInput, setMobileInput] = useState("");
   const [authed, setAuthed] = useState(false);
   const [error, setError] = useState("");
   const [offer, setOffer] = useState<OfferState>({
@@ -619,14 +617,11 @@ function AdminPage({ onBack }: { onBack: () => void }) {
   }, [onlineStatusData]);
 
   const handleLogin = () => {
-    if (
-      email.trim().toLowerCase() === ADMIN_EMAIL &&
-      password === ADMIN_PASSWORD
-    ) {
+    if (mobileInput.trim() === ADMIN_MOBILE) {
       setAuthed(true);
       setError("");
     } else {
-      setError("Galat Email ya Password. Phir try karein.");
+      setError("Galat mobile number. Phir try karein.");
     }
   };
 
@@ -692,43 +687,19 @@ function AdminPage({ onBack }: { onBack: () => void }) {
             <div className="space-y-4">
               <div className="space-y-1.5">
                 <Label
-                  htmlFor="admin-email"
+                  htmlFor="admin-mobile"
                   className="font-body font-semibold text-sm"
                   style={{ color: "oklch(0.90 0.05 70)" }}
                 >
-                  Email ID
+                  Mobile Number
                 </Label>
                 <Input
-                  id="admin-email"
-                  data-ocid="admin.email_input"
-                  type="email"
-                  placeholder="Enter your email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && handleLogin()}
-                  className="font-body"
-                  style={{
-                    background: "white",
-                    border: "1px solid oklch(0.41 0.135 143 / 0.8)",
-                    color: "#222",
-                  }}
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label
-                  htmlFor="admin-pass"
-                  className="font-body font-semibold text-sm"
-                  style={{ color: "oklch(0.90 0.05 70)" }}
-                >
-                  Password
-                </Label>
-                <Input
-                  id="admin-pass"
-                  data-ocid="admin.password_input"
-                  type="password"
-                  placeholder="Enter password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  id="admin-mobile"
+                  data-ocid="admin.mobile_input"
+                  type="tel"
+                  placeholder="Apna mobile number daalen"
+                  value={mobileInput}
+                  onChange={(e) => setMobileInput(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleLogin()}
                   className="font-body"
                   style={{
@@ -803,9 +774,15 @@ function AdminPage({ onBack }: { onBack: () => void }) {
                     id="status-toggle"
                     data-ocid="admin.status_switch"
                     checked={statusOnline}
-                    onCheckedChange={(val) => {
+                    onCheckedChange={async (val) => {
                       setStatusOnline(val);
-                      localStorage.setItem("shopOnlineStatus", String(val));
+                      if (actor) {
+                        try {
+                          await actor.setOnlineStatus(val);
+                        } catch (e) {
+                          console.error("Failed to set online status", e);
+                        }
+                      }
                       queryClient.invalidateQueries({
                         queryKey: ["onlineStatus"],
                       });
@@ -1532,7 +1509,7 @@ function OrderSheet({
   const [address, setAddress] = useState("");
   const payment = "UPI";
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [utrId, setUtrId] = useState("");
+  const [hasPaid, setHasPaid] = useState(false);
 
   const originalTotal = cart.reduce(
     (sum, item) => sum + item.price * item.quantity,
@@ -1542,7 +1519,7 @@ function OrderSheet({
     offer.active && offer.discountPercent > 0
       ? Math.round(originalTotal * (offer.discountPercent / 100))
       : 0;
-  const DELIVERY_CHARGE = 40;
+  const DELIVERY_CHARGE = 0;
   const grandTotal = originalTotal - discountAmount + DELIVERY_CHARGE;
 
   const validate = () => {
@@ -1551,7 +1528,6 @@ function OrderSheet({
     if (!phone.trim() || !/^[0-9]{10}$/.test(phone.trim()))
       errs.phone = "10 digit phone number daalein";
     if (!address.trim()) errs.address = "Address zaroori hai";
-    if (!utrId.trim()) errs.utrId = "UTR/Transaction ID zaroori hai";
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
@@ -1574,8 +1550,8 @@ function OrderSheet({
 
     const discountLine =
       discountAmount > 0
-        ? `\nDiscount Applied: ${discountPct}%\nDiscount Amount: ₹${discountAmount}\nOriginal Total: ₹${originalTotal}\nDelivery Charge: ₹${DELIVERY_CHARGE}\nFinal Total: ₹${grandTotal}`
-        : `\nDelivery Charge: ₹${DELIVERY_CHARGE}\nTotal: ₹${grandTotal}`;
+        ? `\nDiscount Applied: ${discountPct}%\nDiscount Amount: ₹${discountAmount}\nOriginal Total: ₹${originalTotal}\nFinal Total: ₹${grandTotal}`
+        : `\nTotal: ₹${grandTotal}`;
 
     // Save to backend
     let orderId = BigInt(Date.now());
@@ -1781,17 +1757,6 @@ function OrderSheet({
                       <Separator
                         style={{ background: "oklch(0.49 0.16 143 / 0.2)" }}
                       />
-                      <div className="flex justify-between text-sm font-body">
-                        <span style={{ color: "oklch(0.80 0.015 70)" }}>
-                          Delivery Charge
-                        </span>
-                        <span style={{ color: "oklch(0.80 0.015 70)" }}>
-                          + ₹{DELIVERY_CHARGE}
-                        </span>
-                      </div>
-                      <Separator
-                        style={{ background: "oklch(0.49 0.16 143 / 0.2)" }}
-                      />
                       <div className="flex justify-between font-display font-bold text-base">
                         <span style={{ color: "oklch(0.96 0.015 70)" }}>
                           Final Total
@@ -1803,14 +1768,6 @@ function OrderSheet({
                     </>
                   ) : (
                     <>
-                      <div className="flex justify-between text-sm font-body">
-                        <span style={{ color: "oklch(0.80 0.015 70)" }}>
-                          Delivery Charge
-                        </span>
-                        <span style={{ color: "oklch(0.80 0.015 70)" }}>
-                          + ₹{DELIVERY_CHARGE}
-                        </span>
-                      </div>
                       <Separator
                         style={{ background: "oklch(0.49 0.16 143 / 0.2)" }}
                       />
@@ -1954,39 +1911,55 @@ function OrderSheet({
                     <UpiPanel />
                   </div>
 
-                  {/* UTR / Transaction ID */}
-                  <div className="space-y-1.5">
-                    <Label className="font-body font-semibold text-sm text-foreground/80">
-                      UTR / Transaction ID{" "}
-                      <span style={{ color: "oklch(0.65 0.22 25)" }}>*</span>
-                    </Label>
+                  {/* Direct Pay Button */}
+                  <div className="space-y-2">
                     <p
                       className="text-xs font-body"
                       style={{ color: "oklch(0.65 0.07 140)" }}
                     >
-                      Pehle UPI se payment karein, phir Transaction ID (UTR)
-                      yahan daalen
-                    </p>
-                    <Input
-                      data-ocid="order.utr_input"
-                      placeholder="UTR number (e.g. 4287XXXXXXXXXX)"
-                      value={utrId}
-                      onChange={(e) => setUtrId(e.target.value)}
-                      className="font-body text-sm h-10 rounded-xl"
-                      style={{
-                        background: "oklch(0.97 0.01 70)",
-                        border: errors.utrId
-                          ? "1px solid oklch(0.50 0.22 25)"
-                          : "1px solid oklch(0.41 0.135 143 / 0.8)",
-                        color: "oklch(0.34 0.06 143)",
-                      }}
-                    />
-                    {errors.utrId && (
-                      <p
-                        data-ocid="order.utr_error"
-                        className="text-destructive text-xs font-body"
+                      UPI ID:{" "}
+                      <span
+                        className="font-semibold"
+                        style={{ color: "oklch(0.55 0.18 143)" }}
                       >
-                        {errors.utrId}
+                        8582024063@paytm
+                      </span>
+                    </p>
+                    <button
+                      type="button"
+                      data-ocid="order.direct_pay_button"
+                      onClick={() => {
+                        window.open(
+                          "upi://pay?pa=8582024063@paytm&pn=The%20Hot%20Chilly%20Yammy&cu=INR",
+                          "_blank",
+                        );
+                        setHasPaid(true);
+                      }}
+                      className="w-full h-11 rounded-xl font-display font-bold text-sm uppercase tracking-wider transition-all active:scale-[0.98]"
+                      style={{
+                        background:
+                          "linear-gradient(135deg, oklch(0.60 0.20 55) 0%, oklch(0.55 0.22 45) 100%)",
+                        border: "1px solid oklch(0.65 0.20 55 / 0.5)",
+                        color: "oklch(0.10 0.02 50)",
+                        boxShadow: "0 4px 16px oklch(0.60 0.20 55 / 0.35)",
+                      }}
+                    >
+                      📱 UPI se Pay Karo
+                    </button>
+                    {hasPaid ? (
+                      <p
+                        className="text-sm font-body font-semibold text-center"
+                        style={{ color: "oklch(0.55 0.18 143)" }}
+                      >
+                        ✅ Payment ho gayi! Ab order bhejo.
+                      </p>
+                    ) : (
+                      <p
+                        className="text-xs font-body text-center"
+                        style={{ color: "oklch(0.65 0.07 140)" }}
+                      >
+                        Payment karne ke baad neeche &#39;WhatsApp pe Order
+                        Bhejo&#39; dabayein
                       </p>
                     )}
                   </div>
@@ -2010,7 +1983,7 @@ function OrderSheet({
                   type="button"
                   data-ocid="order.submit_button"
                   onClick={handleSubmit}
-                  disabled={!isOnline || !utrId.trim()}
+                  disabled={!isOnline}
                   className="w-full h-13 rounded-xl font-display font-bold text-base uppercase tracking-widest transition-all active:scale-[0.98] py-3.5 disabled:opacity-50 disabled:cursor-not-allowed"
                   style={{
                     background:
@@ -2187,10 +2160,17 @@ export default function App() {
           </h1>
 
           <p
-            className="font-display text-sm tracking-[0.35em] uppercase mb-4"
+            className="font-display text-sm tracking-[0.35em] uppercase mb-2"
             style={{ color: "oklch(0.75 0.21 50 / 0.9)" }}
           >
             ✦ Premium Chinese Vegetarian ✦
+          </p>
+
+          <p
+            className="font-body text-xs font-semibold mb-4 tracking-wide"
+            style={{ color: "oklch(0.82 0.16 143)" }}
+          >
+            🕐 Open: 1:00 PM – 10:00 PM
           </p>
 
           <div className="flex items-center justify-center gap-3 mb-3">
@@ -2261,6 +2241,16 @@ export default function App() {
                 ? "● OPEN — Order Karein"
                 : "● Closed — Abhi Order Nahi Ho Sakta"}
             </Badge>
+          </div>
+
+          {/* Timing */}
+          <div className="flex justify-center mt-2">
+            <span
+              className="text-xs font-body"
+              style={{ color: "oklch(0.75 0.21 50 / 0.75)" }}
+            >
+              🕐 Open: 1:00 PM – 10:00 PM
+            </span>
           </div>
         </motion.div>
       </header>

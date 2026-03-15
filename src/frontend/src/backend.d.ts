@@ -42,8 +42,10 @@ export interface backendInterface {
     addOrder(customerName: string, customerPhone: string, customerAddress: string, items: Array<OrderItem>, subtotal: bigint, totalAmount: bigint, paymentMethod: PaymentMethod, dateString: string): Promise<bigint>;
     getDiscount(): Promise<bigint>;
     getMenu(): Promise<Array<Category>>;
+    getOnlineStatus(): Promise<boolean>;
     getOrders(): Promise<Array<Order>>;
     getOrdersByDate(dateString: string): Promise<Array<Order>>;
     getTotalByDate(dateString: string): Promise<bigint>;
     setDiscount(discount: bigint): Promise<void>;
+    setOnlineStatus(status: boolean): Promise<void>;
 }

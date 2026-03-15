@@ -57,10 +57,12 @@ export const idlService = IDL.Service({
     ),
   'getDiscount' : IDL.Func([], [IDL.Nat], ['query']),
   'getMenu' : IDL.Func([], [IDL.Vec(Category)], ['query']),
+  'getOnlineStatus' : IDL.Func([], [IDL.Bool], ['query']),
   'getOrders' : IDL.Func([], [IDL.Vec(Order)], ['query']),
   'getOrdersByDate' : IDL.Func([IDL.Text], [IDL.Vec(Order)], ['query']),
   'getTotalByDate' : IDL.Func([IDL.Text], [IDL.Nat], ['query']),
   'setDiscount' : IDL.Func([IDL.Nat], [], []),
+  'setOnlineStatus' : IDL.Func([IDL.Bool], [], []),
 });
 
 export const idlInitArgs = [];
@@ -112,10 +114,12 @@ export const idlFactory = ({ IDL }) => {
       ),
     'getDiscount' : IDL.Func([], [IDL.Nat], ['query']),
     'getMenu' : IDL.Func([], [IDL.Vec(Category)], ['query']),
+    'getOnlineStatus' : IDL.Func([], [IDL.Bool], ['query']),
     'getOrders' : IDL.Func([], [IDL.Vec(Order)], ['query']),
     'getOrdersByDate' : IDL.Func([IDL.Text], [IDL.Vec(Order)], ['query']),
     'getTotalByDate' : IDL.Func([IDL.Text], [IDL.Nat], ['query']),
     'setDiscount' : IDL.Func([IDL.Nat], [], []),
+    'setOnlineStatus' : IDL.Func([IDL.Bool], [], []),
   });
 };
 
